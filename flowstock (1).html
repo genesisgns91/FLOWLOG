@@ -1,0 +1,1266 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlowStock</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── BASE VARS ── */
+:root{
+  --b0:#0c0d11;--b1:#111318;--b2:#181a22;--b3:#1f2230;--b4:#272b3a;
+  --br:#252933;--br2:#353a50;
+  --t1:#dde0f2;--t2:#7c819e;--t3:#484c68;
+  --a:#4f6cf5;--a2:#7289f7;--abg:rgba(79,108,245,.11);--abr:rgba(79,108,245,.3);
+  --g:#1ec46a;--gbg:rgba(30,196,106,.1);
+  --w:#f5a733;--wbg:rgba(245,167,51,.1);
+  --e:#ef4f4f;--ebg:rgba(239,79,79,.1);
+  --c:#1ab8d5;--cbg:rgba(26,184,213,.1);
+  --r:7px;--rl:12px;--rx:16px;
+  --sw:234px;
+}
+/* ── MASTER THEME ── */
+:root.master{
+  --b0:#141722;--b1:#1b1f2e;--b2:#222639;--b3:#2a2f44;--b4:#333852;
+  --br:#2e3348;--br2:#424869;
+  --t1:#eceffe;--t2:#9099c0;--t3:#5e6485;
+  --a:#607aff;--a2:#8494ff;--abg:rgba(96,122,255,.13);--abr:rgba(96,122,255,.32);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:'Sora',sans-serif;font-size:14px;line-height:1.5;background:var(--b0);color:var(--t1);-webkit-font-smoothing:antialiased;transition:background .5s,color .3s}
+
+/* ── AUTH ── */
+#pg-auth{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--b0)}
+#pg-auth::before{content:'';position:fixed;width:700px;height:700px;background:radial-gradient(circle,rgba(79,108,245,.07),transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.auth-card{width:360px;background:var(--b1);border:1px solid var(--br);border-radius:var(--rx);padding:36px;box-shadow:0 30px 90px rgba(0,0,0,.5);position:relative;z-index:1}
+.auth-brand{display:flex;align-items:center;gap:10px;margin-bottom:28px}
+.auth-ico{width:36px;height:36px;background:var(--a);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;box-shadow:0 4px 18px rgba(79,108,245,.4)}
+.auth-brand h1{font-size:19px;font-weight:600;letter-spacing:-.3px}
+.auth-brand p{font-size:11px;color:var(--t3);margin-top:1px}
+.seg{display:flex;background:var(--b2);border-radius:var(--r);padding:3px;gap:2px;margin-bottom:20px}
+.seg-btn{flex:1;text-align:center;padding:7px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:500;color:var(--t3);transition:all .15s;user-select:none}
+.seg-btn.on{background:var(--b3);color:var(--t1);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.fg{margin-bottom:13px}
+.fg label{display:block;font-size:11px;font-weight:500;color:var(--t2);margin-bottom:5px;letter-spacing:.1px}
+input,select,textarea{width:100%;background:var(--b2);border:1px solid var(--br);border-radius:var(--r);padding:9px 12px;color:var(--t1);font-family:'Sora',sans-serif;font-size:13px;outline:none;transition:border .15s;-webkit-appearance:none;appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--a);box-shadow:0 0 0 3px var(--abg)}
+input::placeholder,textarea::placeholder{color:var(--t3)}
+select option{background:var(--b2)}
+textarea{resize:vertical;min-height:80px}
+.errtxt{font-size:11px;color:var(--e);margin-top:6px;background:var(--ebg);padding:7px 10px;border-radius:var(--r);border:1px solid rgba(239,79,79,.2);display:none}
+.oktxt{font-size:11px;color:var(--g);margin-top:6px;background:var(--gbg);padding:7px 10px;border-radius:var(--r);border:1px solid rgba(30,196,106,.2);display:none}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:9px 15px;border-radius:var(--r);border:none;cursor:pointer;font-family:'Sora',sans-serif;font-size:12px;font-weight:500;transition:all .15s;white-space:nowrap;flex-shrink:0;letter-spacing:.1px}
+.bp{background:var(--a);color:#fff;box-shadow:0 2px 10px rgba(79,108,245,.35)}.bp:hover{background:var(--a2)}
+.bs{background:var(--b3);color:var(--t1);border:1px solid var(--br)}.bs:hover{background:var(--b4);border-color:var(--br2)}
+.bd{background:var(--ebg);color:var(--e);border:1px solid rgba(239,79,79,.2)}.bd:hover{background:rgba(239,79,79,.2)}
+.bg{background:transparent;color:var(--t2)}.bg:hover{background:var(--b3);color:var(--t1)}
+.bw{background:var(--wbg);color:var(--w);border:1px solid rgba(245,167,51,.2)}.bw:hover{background:rgba(245,167,51,.2)}
+.sm{padding:5px 10px;font-size:11px}
+.full{width:100%;justify-content:center}
+
+/* ── LAYOUT ── */
+#pg-app{display:none;min-height:100vh}
+.shell{display:flex;min-height:100vh}
+
+/* ── SIDEBAR ── */
+.sb{width:var(--sw);background:var(--b1);border-right:1px solid var(--br);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:200;overflow-y:auto;transition:background .5s,border-color .5s}
+.sb-head{padding:14px 13px;border-bottom:1px solid var(--br);display:flex;align-items:center;gap:8px}
+.sb-logo{width:28px;height:28px;background:var(--a);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:background .3s}
+.sb-title{font-size:13px;font-weight:600;flex:1;letter-spacing:-.2px}
+.m-chip{font-size:9px;background:rgba(255,210,50,.13);color:#ffd23c;border:1px solid rgba(255,210,50,.25);border-radius:20px;padding:2px 6px;font-weight:700;letter-spacing:.4px;display:none}
+.sb-nav{flex:1;padding:7px}
+.nav-lbl{font-size:9px;color:var(--t3);font-weight:700;letter-spacing:.8px;text-transform:uppercase;padding:9px 8px 4px}
+.ni{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:var(--r);cursor:pointer;color:var(--t2);font-size:12px;transition:all .12s;user-select:none}
+.ni:hover{background:var(--b2);color:var(--t1)}
+.ni.on{background:var(--abg);color:var(--a2)}
+.ni-i{width:16px;text-align:center;font-size:13px;flex-shrink:0}
+.sb-foot{padding:10px;border-top:1px solid var(--br)}
+.u-pill{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--r);background:var(--b2)}
+.u-av{width:28px;height:28px;border-radius:50%;background:var(--abg);border:1px solid var(--abr);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--a2);flex-shrink:0}
+.u-info{flex:1;min-width:0}
+.u-name{font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.u-role{font-size:9px;color:var(--t3)}
+
+/* ── MAIN ── */
+.main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column;min-height:100vh}
+.topbar{background:var(--b1);border-bottom:1px solid var(--br);padding:0 22px;height:52px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;transition:background .5s}
+.tb-title{font-size:14px;font-weight:600;flex:1;letter-spacing:-.2px}
+.page{padding:22px;flex:1}
+
+/* ── CARD ── */
+.card{background:var(--b1);border:1px solid var(--br);border-radius:var(--rl)}
+.c-head{padding:14px 18px;border-bottom:1px solid var(--br);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.c-title{font-size:13px;font-weight:600}
+.c-body{padding:18px}
+
+/* ── TABLE ── */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--br);border-radius:var(--rl)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:var(--b2);padding:9px 13px;text-align:left;font-size:10px;color:var(--t2);font-weight:700;letter-spacing:.4px;text-transform:uppercase;border-bottom:1px solid var(--br);white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:var(--t1)}
+tbody tr{border-bottom:1px solid var(--br);transition:background .07s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--b2)}
+tbody td{padding:9px 13px;color:var(--t2);vertical-align:middle;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tbody td.main-col{color:var(--t1);font-weight:500}
+.empty-r{text-align:center;padding:40px;color:var(--t3);font-size:12px}
+.empty-ico{font-size:26px;margin-bottom:8px}
+
+/* ── TOOLBAR ── */
+.tb{display:flex;align-items:center;gap:8px;margin-bottom:13px;flex-wrap:wrap}
+.srch{position:relative;flex:1;min-width:180px}
+.srch input{padding-left:30px;font-size:12px}
+.srch-ic{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;font-size:12px}
+
+/* ── MODAL ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--b1);border:1px solid var(--br);border-radius:var(--rx);width:100%;display:flex;flex-direction:column;max-height:92vh;animation:mIn .18s ease}
+.modal.sm{max-width:400px}.modal.md{max-width:540px}.modal.lg{max-width:700px}.modal.xl{max-width:920px}
+@keyframes mIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.mh{padding:16px 18px;border-bottom:1px solid var(--br);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.mh-t{font-size:14px;font-weight:600}
+.mb{padding:18px;overflow-y:auto;flex:1}
+.mf{padding:12px 18px;border-top:1px solid var(--br);display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-shrink:0}
+.mf .bd{margin-right:auto}
+.mx{background:none;border:none;color:var(--t3);cursor:pointer;font-size:16px;padding:4px 7px;border-radius:5px;line-height:1;transition:all .1s}
+.mx:hover{color:var(--t1);background:var(--b3)}
+
+/* ── FORM HELPERS ── */
+.r2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.r3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.chk{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:var(--r);border:1px solid var(--br);cursor:pointer;transition:border .15s;user-select:none}
+.chk:hover{border-color:var(--br2)}
+.chk input[type=checkbox]{accent-color:var(--a);width:13px;height:13px;cursor:pointer;flex-shrink:0}
+.chk span{font-size:12px}
+.hint{font-size:10px;color:var(--t3);margin-top:3px}
+.sep{height:1px;background:var(--br);margin:16px 0}
+.sec{font-size:11px;font-weight:600;color:var(--t2);margin-bottom:9px}
+
+/* ── BADGE ── */
+.bdg{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600}
+.b-ok{background:var(--gbg);color:var(--g)}.b-a{background:var(--abg);color:var(--a2)}
+.b-e{background:var(--ebg);color:var(--e)}.b-w{background:var(--wbg);color:var(--w)}
+.b-c{background:var(--cbg);color:var(--c)}.b-d{background:var(--b3);color:var(--t2)}
+
+/* ── FIELD LIST ── */
+.fi{background:var(--b2);border:1px solid var(--br);border-radius:var(--r);padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:9px}
+.fi-info{flex:1;min-width:0}
+.fi-name{font-size:12px;font-weight:500;margin-bottom:3px}
+.fi-tags{display:flex;gap:4px;flex-wrap:wrap}
+.fi-tag{font-size:9px;background:var(--b3);color:var(--t3);padding:1px 5px;border-radius:3px}
+
+/* ── TABS ── */
+.tab-row{display:flex;border-bottom:1px solid var(--br);gap:2px;margin-bottom:18px}
+.tab-btn{padding:9px 14px;font-size:12px;font-weight:500;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;transition:all .14s;background:none;border-top:none;border-left:none;border-right:none;font-family:'Sora',sans-serif}
+.tab-btn.on{color:var(--a2);border-bottom-color:var(--a)}
+.tab-p{display:none}.tab-p.on{display:block}
+
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:18px}
+.stat{background:var(--b1);border:1px solid var(--br);border-radius:var(--rl);padding:14px 16px}
+.stat-l{font-size:9px;color:var(--t3);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
+.stat-v{font-size:26px;font-weight:600;font-family:'JetBrains Mono',monospace;letter-spacing:-1px}
+.stat-s{font-size:10px;color:var(--t3);margin-top:2px}
+
+/* ── CMD BTN ── */
+.cmdb{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:var(--r);background:var(--abg);color:var(--a2);border:1px solid var(--abr);cursor:pointer;font-size:10px;font-weight:600;transition:all .15s;white-space:nowrap;font-family:'Sora',sans-serif}
+.cmdb:hover{background:rgba(79,108,245,.22)}
+
+/* ── USERS ── */
+.u-row{display:flex;align-items:center;gap:12px;padding:12px 15px;background:var(--b2);border:1px solid var(--br);border-radius:var(--r);margin-bottom:8px;flex-wrap:wrap}
+.u-av2{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;flex-shrink:0}
+.u-meta{flex:1;min-width:120px}
+.u-nm2{font-size:13px;font-weight:500}
+.u-em{font-size:10px;color:var(--t3);margin-top:1px}
+.u-ctrl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.role-sel{background:var(--b3);border:1px solid var(--br2);border-radius:var(--r);padding:6px 10px;color:var(--t1);font-family:'Sora',sans-serif;font-size:11px;font-weight:500;cursor:pointer;outline:none;transition:border .15s;-webkit-appearance:none;appearance:none;min-width:130px}
+.role-sel:focus{border-color:var(--a)}
+.block-btn{display:flex;align-items:center;gap:5px;padding:5px 10px;border-radius:var(--r);background:var(--ebg);color:var(--e);border:1px solid rgba(239,79,79,.2);cursor:pointer;font-size:11px;font-weight:500;font-family:'Sora',sans-serif;transition:all .15s}
+.block-btn.blocked{background:var(--gbg);color:var(--g);border-color:rgba(30,196,106,.2)}
+.block-btn:hover{opacity:.8}
+
+/* ── SCREEN CARDS ── */
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.sc-card{background:var(--b2);border:1px solid var(--br);border-radius:var(--rl);padding:16px;cursor:pointer;transition:all .14s}
+.sc-card:hover{border-color:var(--abr);background:var(--b1)}
+.sc-ico{font-size:24px;margin-bottom:10px}
+.sc-name{font-size:13px;font-weight:600;margin-bottom:3px}
+.sc-meta{font-size:10px;color:var(--t3)}
+.sc-add{border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--t3);min-height:96px;gap:5px}
+.sc-add:hover{color:var(--t2);border-color:var(--abr)}
+
+/* ── AUDIT ── */
+.a-row{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--br)}
+.a-row:last-child{border-bottom:none}
+.a-dot{width:7px;height:7px;border-radius:50%;background:var(--a);margin-top:5px;flex-shrink:0}
+.a-txt{font-size:12px;font-weight:500}
+.a-meta{font-size:10px;color:var(--t3);margin-top:2px}
+
+/* ── MASTER OVERLAY ── */
+#master-ov{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:2000;display:none;align-items:center;justify-content:center}
+.master-box{background:var(--b1);border:1px solid var(--abr);border-radius:var(--rx);padding:36px;width:330px;text-align:center;box-shadow:0 0 80px rgba(79,108,245,.2)}
+.master-icon{font-size:38px;margin-bottom:14px}
+.master-box h2{font-size:17px;font-weight:600;margin-bottom:6px}
+.master-box p{font-size:12px;color:var(--t2);margin-bottom:22px;line-height:1.7}
+
+/* ── CHART ── */
+.chart-c{position:relative;height:240px}
+
+/* ── MISC ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--br2);border-radius:3px}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--br);border-top-color:var(--a);border-radius:50%;animation:sp .55s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:48px;color:var(--t3);font-size:12px}
+.mono{font-family:'JetBrains Mono',monospace}
+</style>
+</head>
+<body>
+
+<!-- ════ AUTH ════ -->
+<div id="pg-auth">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="auth-ico">⚡</div>
+      <div><h1>FlowStock</h1><p>Sistema de controle dinâmico</p></div>
+    </div>
+    <div class="seg">
+      <div class="seg-btn on" onclick="authTab('login')">Entrar</div>
+      <div class="seg-btn" onclick="authTab('reg')">Cadastrar</div>
+    </div>
+    <div id="pane-login">
+      <div class="fg"><label>E-mail</label><input id="li-email" type="email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="fg"><label>Senha</label><input id="li-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="errtxt" id="li-err"></div>
+      <button class="btn bp full" style="margin-top:10px" onclick="doLogin()">Entrar</button>
+    </div>
+    <div id="pane-reg" style="display:none">
+      <div class="fg"><label>Nome completo</label><input id="r-name" type="text" placeholder="Seu nome"></div>
+      <div class="fg"><label>E-mail</label><input id="r-email" type="email" placeholder="seu@email.com"></div>
+      <div class="fg"><label>Senha</label><input id="r-pass" type="password" placeholder="mínimo 6 caracteres"></div>
+      <div class="errtxt" id="r-err"></div>
+      <div class="oktxt" id="r-ok"></div>
+      <button class="btn bp full" style="margin-top:10px" onclick="doRegister()">Criar conta</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ MASTER OVERLAY ════ -->
+<div id="master-ov">
+  <div class="master-box">
+    <div class="master-icon">🔐</div>
+    <h2>Acesso Master</h2>
+    <p>Digite a senha mestre para ativar o modo de administração completo com edição de estrutura.</p>
+    <div class="fg" style="text-align:left"><label>Senha mestre</label>
+      <input id="master-inp" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')confirmMaster()">
+    </div>
+    <div class="errtxt" id="master-err" style="text-align:left;margin-bottom:8px"></div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn bs full" onclick="closeMasterOv()">Cancelar</button>
+      <button class="btn bp full" onclick="confirmMaster()">Desbloquear</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ APP ════ -->
+<div id="pg-app">
+  <div class="shell">
+    <aside class="sb" id="sidebar">
+      <div class="sb-head">
+        <div class="sb-logo">⚡</div>
+        <div class="sb-title">FlowStock</div>
+        <span class="m-chip" id="m-chip">MASTER</span>
+      </div>
+      <nav class="sb-nav">
+        <div class="nav-lbl">Principal</div>
+        <div class="ni on" id="ni-home" onclick="goHome()"><span class="ni-i">🏠</span>Início</div>
+        <div id="screens-nav"></div>
+        <div id="admin-sec" style="display:none">
+          <div class="nav-lbl" style="margin-top:4px">Administração</div>
+          <div class="ni" id="ni-manage" onclick="goManage()"><span class="ni-i">📐</span>Telas</div>
+          <div class="ni" id="ni-users" onclick="goUsers()"><span class="ni-i">👥</span>Usuários</div>
+          <div class="ni" id="ni-audit" onclick="goAudit()"><span class="ni-i">📋</span>Auditoria</div>
+        </div>
+      </nav>
+      <div class="sb-foot">
+        <div class="u-pill">
+          <div class="u-av" id="u-av">?</div>
+          <div class="u-info">
+            <div class="u-name" id="u-name">…</div>
+            <div class="u-role" id="u-role">usuário</div>
+          </div>
+          <button class="btn bg sm" onclick="doLogout()" title="Sair" style="padding:4px 7px">⏻</button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar" id="topbar">
+        <div class="tb-title" id="tb-title">Início</div>
+        <div id="tb-right" style="display:flex;align-items:center;gap:8px"></div>
+      </div>
+      <div class="page" id="page-area"></div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+
+<script>
+// ══════════════ FIREBASE ══════════════
+firebase.initializeApp({
+  apiKey:"AIzaSyADZphyLztYYeMV130uyq_3CYthr6QzBo0",
+  authDomain:"coringa-c0bce.firebaseapp.com",
+  projectId:"coringa-c0bce",
+  storageBucket:"coringa-c0bce.firebasestorage.app",
+  messagingSenderId:"346363639454",
+  appId:"1:346363639454:web:38b288fe0d7abf66daad8f"
+});
+const auth = firebase.auth();
+const db   = firebase.firestore();
+const FV   = firebase.firestore.FieldValue;
+
+const MASTER_PW = "LOG#001";
+
+// ROLES: viewer=só visualiza | operator=registra+movimenta | admin=tudo exceto editar estrutura | master=tudo
+// blocked=sem acesso
+
+// ══════════════ STATE ══════════════
+let CU=null, UP=null, isMaster=false;
+let SCREENS=[];
+let _recs=[], _vf=[], _cmds=[], _sid='';
+let _sc=null, _sd=1;
+let _charts={};
+let _cafFields=[];
+
+// ══════════════ HELPERS ══════════════
+const $=id=>document.getElementById(id);
+const val=id=>$( id)?$( id).value:'';
+const setTitle=t=>$('tb-title').textContent=t;
+
+function showErr(id,txt){const el=$(id);el.textContent=txt;el.style.display='block'}
+function hideEl(id){const el=$(id);if(el)el.style.display='none'}
+function showEl(id,d='block'){const el=$(id);if(el)el.style.display=d}
+
+function setActive(key){
+  document.querySelectorAll('.ni').forEach(n=>n.classList.remove('on'));
+  const el=$('ni-'+key)||$('ni-s-'+key);
+  if(el)el.classList.add('on');
+}
+
+function openModal(html){
+  $('modal-root').innerHTML=`<div class="ov" onclick="if(event.target===this)closeModal()">${html}</div>`;
+}
+function closeModal(){$('modal-root').innerHTML=''}
+
+function switchTab(btn,tid){
+  const scope=btn.closest('.mb')||$('page-area');
+  btn.closest('.tab-row').querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  scope.querySelectorAll('.tab-p').forEach(p=>p.classList.remove('on'));
+  const t=$(tid);if(t)t.classList.add('on');
+}
+
+// PERMISSIONS
+function canView()    { return !isBlocked(); }
+function canOperate() { return ['operator','admin'].includes(UP?.role)||isMaster; }
+function canAdmin()   { return UP?.role==='admin'||isMaster; }
+function isBlocked()  { return UP?.role==='blocked'; }
+
+function renderTopRight(){
+  // Always show master button
+  const masterBtn = isMaster
+    ? `<button class="btn bw sm" onclick="exitMaster()">🔓 Sair do modo Master</button>`
+    : `<button class="btn bs sm" onclick="openMasterOv()">🔐 Modo Master</button>`;
+  $('tb-right').innerHTML = masterBtn;
+}
+
+// ══════════════ AUTH ══════════════
+function authTab(t){
+  document.querySelectorAll('.seg-btn').forEach((b,i)=>b.classList.toggle('on',i===(t==='login'?0:1)));
+  $('pane-login').style.display=t==='login'?'block':'none';
+  $('pane-reg').style.display=t==='reg'?'block':'none';
+}
+
+async function doLogin(){
+  const e=val('li-email'),p=val('li-pass');
+  hideEl('li-err');
+  if(!e||!p){showErr('li-err','Preencha todos os campos.');return}
+  try{await auth.signInWithEmailAndPassword(e,p)}
+  catch(ex){showErr('li-err',ex.code==='auth/invalid-credential'?'E-mail ou senha incorretos.':ex.message)}
+}
+
+async function doRegister(){
+  const n=val('r-name'),e=val('r-email'),p=val('r-pass');
+  hideEl('r-err');hideEl('r-ok');
+  if(!n||!e||!p){showErr('r-err','Preencha todos os campos.');return}
+  if(p.length<6){showErr('r-err','Senha deve ter ao menos 6 caracteres.');return}
+  try{
+    const cr=await auth.createUserWithEmailAndPassword(e,p);
+    await db.collection('users').doc(cr.user.uid).set({
+      name:n,email:e,role:'operator',
+      createdAt:FV.serverTimestamp()
+    });
+    const ok=$('r-ok');ok.textContent='Conta criada! Redirecionando…';ok.style.display='block';
+  }catch(ex){showErr('r-err',ex.message)}
+}
+
+function doLogout(){
+  isMaster=false;
+  document.documentElement.classList.remove('master');
+  auth.signOut();
+}
+
+auth.onAuthStateChanged(async u=>{
+  if(u){
+    CU=u;
+    const snap=await db.collection('users').doc(u.uid).get();
+    UP=snap.exists?snap.data():{name:u.email,role:'operator'};
+    if(UP.role==='blocked'){
+      auth.signOut();
+      alert('Sua conta está bloqueada. Contacte o administrador.');
+      return;
+    }
+    showEl('pg-auth','none');showEl('pg-app','flex');
+    $('pg-app').style.display='block';
+    await boot();
+  }else{
+    CU=null;UP=null;isMaster=false;
+    document.documentElement.classList.remove('master');
+    showEl('pg-auth','flex');$('pg-app').style.display='none';
+  }
+});
+
+// ══════════════ MASTER ══════════════
+function openMasterOv(){
+  $('master-inp').value='';
+  hideEl('master-err');
+  $('master-ov').style.display='flex';
+  setTimeout(()=>$('master-inp').focus(),100);
+}
+function closeMasterOv(){$('master-ov').style.display='none'}
+
+function confirmMaster(){
+  if(val('master-inp')===MASTER_PW){
+    isMaster=true;
+    document.documentElement.classList.add('master');
+    $('m-chip').style.display='inline';
+    $('admin-sec').style.display='block';
+    closeMasterOv();
+    refreshChip();
+    renderTopRight();
+    goHome();
+  }else{
+    showErr('master-err','Senha incorreta.');
+  }
+}
+
+function exitMaster(){
+  isMaster=false;
+  document.documentElement.classList.remove('master');
+  $('m-chip').style.display='none';
+  if(!canAdmin()) $('admin-sec').style.display='none';
+  refreshChip();
+  renderTopRight();
+  goHome();
+}
+
+// ══════════════ BOOT ══════════════
+async function boot(){
+  refreshChip();
+  renderTopRight();
+  if(canAdmin()) $('admin-sec').style.display='block';
+  await loadScreens();
+  if(SCREENS.length===0&&canAdmin()) await seedScreen();
+  goHome();
+}
+
+function refreshChip(){
+  const n=UP?.name||CU?.email||'?';
+  const ini=n.trim().split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+  $('u-av').textContent=ini;
+  $('u-name').textContent=n;
+  const rl=isMaster?'Master Admin':UP?.role==='admin'?'Administrador':UP?.role==='operator'?'Operador':'Visualizador';
+  $('u-role').textContent=rl;
+}
+
+async function loadScreens(){
+  const snap=await db.collection('screens').orderBy('order').get();
+  SCREENS=snap.docs.map(d=>({id:d.id,...d.data()}));
+  buildSidebarScreens();
+}
+
+function buildSidebarScreens(){
+  const wrap=$('screens-nav');
+  if(!SCREENS.length){wrap.innerHTML='';return}
+  wrap.innerHTML=`<div class="nav-lbl">Telas</div>`+
+    SCREENS.map(s=>`<div class="ni" id="ni-s-${s.id}" onclick="goScreen('${s.id}')">
+      <span class="ni-i">${s.icon||'📋'}</span>${s.name}
+    </div>`).join('');
+}
+
+async function seedScreen(){
+  const ref=db.collection('screens').doc();
+  await ref.set({
+    name:'Entradas',icon:'📥',order:0,
+    createdAt:FV.serverTimestamp(),
+    fields:[
+      {id:'f1',name:'Código',type:'text',required:true,unique:true,editable:false,showInTable:true,order:0},
+      {id:'f2',name:'Produto',type:'text',required:true,unique:false,editable:true,showInTable:true,order:1},
+      {id:'f3',name:'Quantidade',type:'number',required:true,unique:false,editable:true,showInTable:true,order:2},
+      {id:'f4',name:'Data',type:'date',required:true,unique:false,editable:true,showInTable:true,order:3},
+      {id:'f5',name:'Observações',type:'textarea',required:false,unique:false,editable:true,showInTable:false,order:4},
+    ],
+    commands:[],charts:[]
+  });
+  await loadScreens();
+}
+
+// ══════════════ HOME ══════════════
+async function goHome(){
+  setActive('home');setTitle('Início');renderTopRight();
+  $('page-area').innerHTML=`<div class="loading"><div class="spin"></div>Carregando…</div>`;
+  const counts=await Promise.all(SCREENS.map(async s=>({
+    ...s,count:(await db.collection('records').where('screenId','==',s.id).get()).size
+  })));
+  $('page-area').innerHTML=`
+    <div class="stats">
+      ${counts.map(s=>`<div class="stat"><div class="stat-l">${s.icon||'📋'} ${s.name}</div><div class="stat-v">${s.count}</div><div class="stat-s">registros</div></div>`).join('')}
+      <div class="stat"><div class="stat-l">📐 Telas</div><div class="stat-v">${SCREENS.length}</div><div class="stat-s">ativas</div></div>
+    </div>
+    <div class="sc-grid">
+      ${counts.map(s=>`<div class="sc-card" onclick="goScreen('${s.id}')">
+        <div class="sc-ico">${s.icon||'📋'}</div>
+        <div class="sc-name">${s.name}</div>
+        <div class="sc-meta">${s.count} registro(s) · ${(s.fields||[]).length} campo(s)</div>
+      </div>`).join('')}
+      ${isMaster?`<div class="sc-card sc-add" onclick="openCreateScreen()"><span style="font-size:22px">+</span><span style="font-size:11px">Nova tela</span></div>`:''}
+    </div>`;
+}
+
+// ══════════════ SCREEN ══════════════
+async function goScreen(sid){
+  const sc=SCREENS.find(s=>s.id===sid);
+  if(!sc)return;
+  setActive('s-'+sid);setTitle(sc.name);renderTopRight();
+  if(isMaster) $('tb-right').innerHTML+=` <button class="btn bs sm" onclick="openScreenCfg('${sid}')">⚙ Configurar</button>`;
+
+  $('page-area').innerHTML=`<div class="loading"><div class="spin"></div>Carregando…</div>`;
+  const snap=await db.collection('records').where('screenId','==',sid).orderBy('createdAt','desc').get();
+  const recs=snap.docs.map(d=>({id:d.id,...d.data()}));
+  const fields=(sc.fields||[]).slice().sort((a,b)=>a.order-b.order);
+  const vf=fields.filter(f=>f.showInTable!==false);
+  const cmds=sc.commands||[];
+  const charts=sc.charts||[];
+  _recs=recs;_vf=vf;_cmds=cmds;_sid=sid;_sc=null;_sd=1;
+
+  // Tabs: Registrar (se pode operar), Tabela, Gráficos
+  const canOp=canOperate();
+  const canAdm=canAdmin();
+  const hasCharts=charts.length>0||isMaster;
+
+  $('page-area').innerHTML=`
+    <div class="tab-row">
+      ${canOp?`<button class="tab-btn on" onclick="switchTab(this,'tp-form')">✏ Registrar</button>`:''}
+      <button class="tab-btn ${canOp?'':'on'}" onclick="switchTab(this,'tp-table')">📋 Tabela <span class="bdg b-d" style="margin-left:4px">${recs.length}</span></button>
+      ${hasCharts?`<button class="tab-btn" onclick="switchTab(this,'tp-charts');loadChartsTab('${sid}')">📊 Gráficos</button>`:''}
+    </div>
+
+    ${canOp?`<div id="tp-form" class="tab-p on">
+      <div class="card" style="max-width:580px">
+        <div class="c-head"><div class="c-title">✏ Novo registro — ${sc.name}</div></div>
+        <div class="c-body">
+          ${buildFormHtml(fields,sid)}
+          <div style="margin-top:8px"><button class="btn bp" onclick="submitRecord('${sid}','')">Registrar</button></div>
+        </div>
+      </div>
+    </div>`:''}
+
+    <div id="tp-table" class="tab-p ${canOp?'':'on'}">
+      <div class="tb">
+        <div class="srch"><span class="srch-ic">🔍</span><input id="g-srch" placeholder="Buscar em todos os campos…" oninput="filterRows()"></div>
+        ${canAdm?`<button class="btn bs sm" onclick="exportCSV()">↓ CSV</button><button class="btn bs sm" onclick="exportXLSX()">↓ XLSX</button>`:''}
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr>
+            ${vf.map(f=>`<th onclick="sortRows('${f.id}')">${f.name}</th>`).join('')}
+            <th>Por</th><th>Data/Hora</th>
+            ${(cmds.length>0||isMaster)?'<th>Ações</th>':''}
+          </tr></thead>
+          <tbody id="tbl-body">
+            ${recs.length?recs.map(r=>rowHtml(r,vf,cmds,sid)).join(''):`<tr><td colspan="99"><div class="empty-r"><div class="empty-ico">📭</div>Nenhum registro ainda</div></td></tr>`}
+          </tbody>
+        </table>
+      </div>
+      <div id="row-ct" style="margin-top:8px;font-size:10px;color:var(--t3)">${recs.length} registro(s)</div>
+    </div>
+
+    ${hasCharts?`<div id="tp-charts" class="tab-p">
+      <div id="charts-area" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px">
+        ${isMaster?`<div class="sc-card sc-add" style="min-height:80px" onclick="openChartModal('${sid}',null)"><span style="font-size:18px">+</span><span style="font-size:11px">Novo gráfico</span></div>`:''}
+      </div>
+    </div>`:''}
+  `;
+  // load linked selects
+  fields.filter(f=>f.type==='linked'&&f.linkedScreen).forEach(f=>loadLinked(f));
+}
+
+function buildFormHtml(fields,sid){
+  if(!fields.length) return `<div style="text-align:center;padding:20px;color:var(--t3);font-size:12px">
+    ${isMaster?'Nenhum campo configurado. Clique em ⚙ Configurar acima.':'Nenhum campo configurado.'}
+  </div>`;
+  return fields.map(f=>{
+    let inp='';
+    if(f.type==='textarea') inp=`<textarea id="ff-${f.id}" ${f.required?'required':''}></textarea>`;
+    else if(f.type==='select'){
+      const opts=(f.options||[]).map(o=>`<option value="${o}">${o}</option>`).join('');
+      inp=`<select id="ff-${f.id}" ${f.required?'required':''}><option value="">Selecionar…</option>${opts}</select>`;
+    } else if(f.type==='linked'){
+      inp=`<select id="ff-${f.id}" ${f.required?'required':''}><option value="">Carregando…</option></select>`;
+    } else {
+      const t=f.type==='number'?'number':f.type==='date'?'date':'text';
+      inp=`<input type="${t}" id="ff-${f.id}" placeholder="${f.name}…" ${f.required?'required':''}>`;
+    }
+    return `<div class="fg"><label>${f.name}${f.required?' <span style="color:var(--e)">*</span>':''}</label>${inp}</div>`;
+  }).join('');
+}
+
+async function loadLinked(field){
+  const el=$('ff-'+field.id);if(!el)return;
+  const snap=await db.collection('records').where('screenId','==',field.linkedScreen).get();
+  const sc=SCREENS.find(s=>s.id===field.linkedScreen);
+  const uniF=(sc?.fields||[]).find(f=>f.unique)||(sc?.fields||[])[0];
+  el.innerHTML='<option value="">Selecionar…</option>';
+  snap.docs.forEach(d=>{
+    const v=d.data().data?.[uniF?.id]||d.id;
+    el.innerHTML+=`<option value="${v}">${v}</option>`;
+  });
+}
+
+function rowHtml(r,vf,cmds,sid){
+  const cells=vf.map((f,i)=>{
+    let v=r.data?.[f.id]??'';
+    if(f.type==='date'&&v) v=new Date(v+'T00:00:00').toLocaleDateString('pt-BR');
+    return `<td ${i===0?'class="main-col"':''} title="${v||''}">${v||'<span style="color:var(--t3)">—</span>'}</td>`;
+  }).join('');
+  const by=r.createdBy?.name||'—';
+  const at=r.createdAt?.toDate?r.createdAt.toDate().toLocaleString('pt-BR'):'—';
+  const cmdBtns=cmds.map(c=>`<button class="cmdb" onclick="execCmd('${c.id}','${r.id}','${sid}')">${c.icon||'▶'} ${c.name}</button>`).join(' ');
+  const adm=isMaster?`<button class="btn bg sm" onclick="openEditRecord('${r.id}','${sid}')" title="Editar">✏</button><button class="btn bd sm" onclick="delRecord('${r.id}','${sid}')" title="Excluir">🗑</button>`:'';
+  const hasAct=cmds.length>0||isMaster;
+  return `<tr id="row-${r.id}">${cells}
+    <td style="color:var(--t2)">${by}</td>
+    <td class="mono" style="font-size:10px;color:var(--t2)">${at}</td>
+    ${hasAct?`<td style="white-space:nowrap">${cmdBtns} ${adm}</td>`:''}
+  </tr>`;
+}
+
+// ══════════════ TABLE OPS ══════════════
+function filterRows(){
+  const q=(val('g-srch')||'').toLowerCase();
+  let n=0;
+  document.querySelectorAll('#tbl-body tr').forEach(tr=>{
+    const show=!q||tr.textContent.toLowerCase().includes(q);
+    tr.style.display=show?'':'none';
+    if(show)n++;
+  });
+  const el=$('row-ct');if(el)el.textContent=n+' registro(s)';
+}
+
+function sortRows(fid){
+  if(_sc===fid)_sd*=-1;else{_sc=fid;_sd=1}
+  const sorted=[..._recs].sort((a,b)=>{
+    const va=a.data?.[fid]??'',vb=b.data?.[fid]??'';
+    return String(va).localeCompare(String(vb),undefined,{numeric:true})*_sd;
+  });
+  const tb=$('tbl-body');
+  if(tb)tb.innerHTML=sorted.map(r=>rowHtml(r,_vf,_cmds,_sid)).join('');
+}
+
+function exportCSV(){
+  const sc=SCREENS.find(s=>s.id===_sid);
+  const h=[..._vf.map(f=>`"${f.name}"`),' "Por"','"Data/Hora"'].join(',');
+  const rows=_recs.map(r=>[..._vf.map(f=>`"${r.data?.[f.id]??''}"`),`"${r.createdBy?.name||''}"`,`"${r.createdAt?.toDate?r.createdAt.toDate().toLocaleString('pt-BR'):''}"`].join(','));
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([[h,...rows].join('\n')],{type:'text/csv'}));
+  a.download=(sc?.name||'registros')+'.csv';a.click();
+}
+
+function exportXLSX(){
+  const sc=SCREENS.find(s=>s.id===_sid);
+  const data=[[..._vf.map(f=>f.name),'Por','Data/Hora']];
+  _recs.forEach(r=>data.push([..._vf.map(f=>r.data?.[f.id]??''),r.createdBy?.name||'',r.createdAt?.toDate?r.createdAt.toDate().toLocaleString('pt-BR'):'']));
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),sc?.name||'Sheet');
+  XLSX.writeFile(wb,(sc?.name||'registros')+'.xlsx');
+}
+
+// ══════════════ RECORD CRUD ══════════════
+async function submitRecord(sid,recId){
+  const sc=SCREENS.find(s=>s.id===sid);if(!sc)return;
+  const fields=sc.fields||[];
+  const data={};let ok=true;
+  for(const f of fields){
+    const el=$('ff-'+f.id);if(!el)continue;
+    if(f.required&&!el.value.trim()){el.style.borderColor='var(--e)';ok=false}else el.style.borderColor='';
+    data[f.id]=f.type==='number'?(parseFloat(el.value)||0):el.value;
+  }
+  if(!ok)return;
+  for(const f of fields.filter(x=>x.unique)){
+    if(!data[f.id])continue;
+    const snap=await db.collection('records').where('screenId','==',sid).where(`data.${f.id}`,'==',data[f.id]).get();
+    if(snap.docs.some(d=>d.id!==recId)){alert(`"${f.name}" deve ser único. "${data[f.id]}" já existe.`);return}
+  }
+  const ts=FV.serverTimestamp();
+  const who={uid:CU.uid,name:UP?.name||CU.email};
+  if(recId){
+    await db.collection('records').doc(recId).update({data,updatedAt:ts,updatedBy:who});
+    await addAudit('edit',sid,recId,`Registro editado em "${sc.name}"`);
+  }else{
+    const ref=await db.collection('records').add({screenId:sid,data,createdAt:ts,createdBy:who});
+    await addAudit('create',sid,ref.id,`Novo registro em "${sc.name}"`);
+  }
+  closeModal();goScreen(sid);
+}
+
+async function openEditRecord(recId,sid){
+  if(!isMaster)return;
+  const snap=await db.collection('records').doc(recId).get();
+  if(!snap.exists)return;
+  const sc=SCREENS.find(s=>s.id===sid);
+  const fields=(sc?.fields||[]).slice().sort((a,b)=>a.order-b.order);
+  const data=snap.data().data||{};
+  openModal(`<div class="modal md">
+    <div class="mh"><div class="mh-t">✏ Editar registro</div><button class="mx" onclick="closeModal()">✕</button></div>
+    <div class="mb">${fields.map(f=>{
+      const v=data[f.id]??'';const dis=!f.editable?'disabled style="opacity:.5"':'';
+      let inp=f.type==='textarea'?`<textarea id="ff-${f.id}" ${dis}>${v}</textarea>`
+        :f.type==='select'?`<select id="ff-${f.id}" ${dis}><option value="">—</option>${(f.options||[]).map(o=>`<option ${v===o?'selected':''}>${o}</option>`).join('')}</select>`
+        :`<input type="${f.type==='number'?'number':'text'}" id="ff-${f.id}" value="${v}" ${dis}>`;
+      return `<div class="fg"><label>${f.name}</label>${inp}${!f.editable?`<div class="hint">Não editável após registro</div>`:''}</div>`;
+    }).join('')}</div>
+    <div class="mf"><button class="btn bs" onclick="closeModal()">Cancelar</button><button class="btn bp" onclick="submitRecord('${sid}','${recId}')">Salvar</button></div>
+  </div>`);
+}
+
+async function delRecord(recId,sid){
+  if(!confirm('Excluir este registro?'))return;
+  await db.collection('records').doc(recId).delete();
+  await addAudit('delete',sid,recId,'Registro excluído');
+  goScreen(sid);
+}
+
+// ══════════════ COMMANDS ══════════════
+async function execCmd(cmdId,recId,sid){
+  const sc=SCREENS.find(s=>s.id===sid);
+  const cmd=(sc?.commands||[]).find(c=>c.id===cmdId);if(!cmd)return;
+  const addFields=cmd.fields||[];
+  openModal(`<div class="modal md">
+    <div class="mh"><div class="mh-t">${cmd.icon||'▶'} ${cmd.name}</div><button class="mx" onclick="closeModal()">✕</button></div>
+    <div class="mb">
+      ${cmd.description?`<p style="font-size:12px;color:var(--t2);margin-bottom:14px;line-height:1.7">${cmd.description}</p>`:''}
+      ${addFields.map(f=>`<div class="fg"><label>${f.name}${f.required?' *':''}</label><input type="text" id="cf-${f.id}" placeholder="${f.name}…"></div>`).join('')||'<p style="font-size:12px;color:var(--t2)">Confirmar ação?</p>'}
+    </div>
+    <div class="mf"><button class="btn bs" onclick="closeModal()">Cancelar</button><button class="btn bp" onclick="confirmCmd('${cmdId}','${recId}','${sid}')">Confirmar</button></div>
+  </div>`);
+}
+
+async function confirmCmd(cmdId,recId,sid){
+  const sc=SCREENS.find(s=>s.id===sid);
+  const cmd=(sc?.commands||[]).find(c=>c.id===cmdId);if(!cmd)return;
+  const addData={};
+  (cmd.fields||[]).forEach(f=>{const el=$('cf-'+f.id);if(el)addData[f.id]=el.value});
+  const snap=await db.collection('records').doc(recId).get();
+  const old=snap.data();
+  const ts=FV.serverTimestamp();
+  const who={uid:CU.uid,name:UP?.name||CU.email};
+  if(cmd.targetScreen){
+    const tsc=SCREENS.find(s=>s.id===cmd.targetScreen);
+    await db.collection('records').add({
+      screenId:cmd.targetScreen,data:{...(old.data||{}),...addData},
+      createdAt:ts,createdBy:who,
+      origin:{screenId:sid,screenName:sc.name,command:cmd.name}
+    });
+    await db.collection('records').doc(recId).delete();
+    await addAudit('move',sid,recId,`"${sc.name}" → "${tsc?.name||'?'}" via "${cmd.name}"`);
+  }else{
+    await db.collection('records').doc(recId).update({data:{...(old.data||{}),...addData},updatedAt:ts,updatedBy:who});
+    await addAudit('command',sid,recId,`Comando "${cmd.name}" executado`);
+  }
+  closeModal();goScreen(sid);
+}
+
+// ══════════════ CHARTS ══════════════
+async function loadChartsTab(sid){
+  const sc=SCREENS.find(s=>s.id===sid);
+  const charts=sc?.charts||[];
+  const snap=await db.collection('records').where('screenId','==',sid).get();
+  const recs=snap.docs.map(d=>({id:d.id,...d.data()}));
+  const fields=sc?.fields||[];
+  const area=$('charts-area');if(!area)return;
+  area.querySelectorAll('.chart-card').forEach(el=>el.remove());
+  charts.forEach((c,i)=>{
+    const div=document.createElement('div');div.className='card chart-card';
+    div.innerHTML=`<div class="c-head"><div class="c-title">${c.title}</div>${isMaster?`<button class="btn bg sm" onclick="openChartModal('${sid}',${i})">✏ Editar</button>`:''}</div>
+    <div class="c-body"><div class="chart-c"><canvas id="cv-${i}"></canvas></div></div>`;
+    area.appendChild(div);
+    setTimeout(()=>{
+      const cvs=$('cv-'+i);if(!cvs)return;
+      if(_charts['cv-'+i]){_charts['cv-'+i].destroy()}
+      const f=fields.find(f=>f.id===c.field);if(!f)return;
+      const counts={};
+      recs.forEach(r=>{const v=r.data?.[c.field]||'(vazio)';counts[v]=(counts[v]||0)+(c.agg==='sum'?(parseFloat(r.data?.[c.valField])||0):1)});
+      const COLS=['#4f6cf5','#1ec46a','#f5a733','#ef4f4f','#1ab8d5','#ec4899','#a855f7','#f97316'];
+      _charts['cv-'+i]=new Chart(cvs,{
+        type:c.type||'bar',
+        data:{labels:Object.keys(counts),datasets:[{label:c.title,data:Object.values(counts),
+          backgroundColor:['pie','doughnut'].includes(c.type)?COLS:COLS[0],borderColor:'transparent',borderRadius:4}]},
+        options:{responsive:true,maintainAspectRatio:false,
+          plugins:{legend:{labels:{color:'#7c819e',font:{size:11,family:"'Sora'"}}}},
+          scales:['pie','doughnut'].includes(c.type)?{}:{
+            x:{ticks:{color:'#7c819e'},grid:{color:'#252933'}},
+            y:{ticks:{color:'#7c819e'},grid:{color:'#252933'}}
+          }}
+      });
+    },80);
+  });
+}
+
+function openChartModal(sid,idx){
+  if(!isMaster)return;
+  const sc=SCREENS.find(s=>s.id===sid);
+  const ex=idx!==null?(sc?.charts||[])[idx]:null;
+  const fields=sc?.fields||[];
+  const fOpts=fields.map(f=>`<option value="${f.id}" ${ex?.field===f.id?'selected':''}>${f.name}</option>`).join('');
+  const vOpts=fields.filter(f=>f.type==='number').map(f=>`<option value="${f.id}" ${ex?.valField===f.id?'selected':''}>${f.name}</option>`).join('');
+  openModal(`<div class="modal md">
+    <div class="mh"><div class="mh-t">${ex?'Editar':'Novo'} gráfico</div><button class="mx" onclick="closeModal()">✕</button></div>
+    <div class="mb">
+      <div class="fg"><label>Título</label><input id="ct-title" value="${ex?.title||''}"></div>
+      <div class="r2">
+        <div class="fg"><label>Tipo de gráfico</label><select id="ct-type">${['bar','line','pie','doughnut'].map(t=>`<option value="${t}" ${ex?.type===t?'selected':''}>${t}</option>`).join('')}</select></div>
+        <div class="fg"><label>Campo (eixo / agrupamento)</label><select id="ct-field"><option value="">—</option>${fOpts}</select></div>
+      </div>
+      <div class="r2">
+        <div class="fg"><label>Agrupamento</label><select id="ct-agg"><option value="count" ${!ex||ex.agg==='count'?'selected':''}>Contagem</option><option value="sum" ${ex?.agg==='sum'?'selected':''}>Soma</option></select></div>
+        <div class="fg"><label>Campo de valor (soma)</label><select id="ct-val"><option value="">—</option>${vOpts}</select></div>
+      </div>
+    </div>
+    <div class="mf">
+      ${idx!==null?`<button class="btn bd" onclick="deleteChart('${sid}',${idx})">Excluir</button>`:''}
+      <button class="btn bs" onclick="closeModal()">Cancelar</button>
+      <button class="btn bp" onclick="saveChart('${sid}',${idx})">Salvar</button>
+    </div>
+  </div>`);
+}
+
+async function saveChart(sid,idx){
+  const c={title:val('ct-title'),type:val('ct-type'),field:val('ct-field'),agg:val('ct-agg'),valField:val('ct-val')};
+  const sc=SCREENS.find(s=>s.id===sid);
+  const charts=[...(sc?.charts||[])];
+  if(idx!==null)charts[idx]=c;else charts.push(c);
+  await db.collection('screens').doc(sid).update({charts});
+  closeModal();await loadScreens();goScreen(sid);
+}
+async function deleteChart(sid,idx){
+  if(!confirm('Excluir gráfico?'))return;
+  const sc=SCREENS.find(s=>s.id===sid);
+  const charts=[...(sc?.charts||[])];charts.splice(idx,1);
+  await db.collection('screens').doc(sid).update({charts});
+  closeModal();await loadScreens();goScreen(sid);
+}
+
+// ══════════════ SCREEN CONFIG ══════════════
+function openScreenCfg(sid){
+  if(!isMaster)return;
+  const sc=SCREENS.find(s=>s.id===sid);if(!sc)return;
+  openModal(`<div class="modal xl">
+    <div class="mh"><div class="mh-t">⚙ Configurar — ${sc.name}</div><button class="mx" onclick="closeModal()">✕</button></div>
+    <div class="mb">
+      <div class="tab-row" style="margin-bottom:14px">
+        <button class="tab-btn on" onclick="switchTab(this,'tc-fields')">📝 Campos</button>
+        <button class="tab-btn" onclick="switchTab(this,'tc-cmds')">▶ Comandos</button>
+        <button class="tab-btn" onclick="switchTab(this,'tc-gen')">⚙ Geral</button>
+      </div>
+      <div id="tc-fields" class="tab-p on">${renderFieldsCfg(sc)}</div>
+      <div id="tc-cmds"   class="tab-p">${renderCmdsCfg(sc)}</div>
+      <div id="tc-gen"    class="tab-p">${renderGenCfg(sc)}</div>
+    </div>
+    <div class="mf"><button class="btn bs" onclick="closeModal()">Fechar</button></div>
+  </div>`);
+}
+
+// ─── FIELDS CONFIG ───
+function renderFieldsCfg(sc){
+  const fields=(sc.fields||[]).slice().sort((a,b)=>a.order-b.order);
+  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <p style="font-size:12px;color:var(--t2)">Defina os campos do formulário. O mesmo nome vira coluna na tabela.</p>
+    <button class="btn bp sm" onclick="openFieldModal('${sc.id}',null)">+ Novo campo</button>
+  </div>
+  <div id="fl-list">
+    ${fields.map(f=>`<div class="fi">
+      <span style="cursor:grab;color:var(--t3);font-size:16px">⠿</span>
+      <div class="fi-info">
+        <div class="fi-name">${f.name}</div>
+        <div class="fi-tags">
+          <span class="fi-tag">${f.type==='text'?'Texto':f.type==='number'?'Número':f.type==='date'?'Data':f.type==='textarea'?'Texto longo':f.type==='select'?'Seleção':f.type==='linked'?'Vinculado':f.type}</span>
+          ${f.required?'<span class="fi-tag" style="color:var(--e)">obrigatório</span>':''}
+          ${f.unique?'<span class="fi-tag">único</span>':''}
+          ${f.editable===false?'<span class="fi-tag">não editável</span>':''}
+          ${f.showInTable===false?'<span class="fi-tag">oculto na tabela</span>':''}
+          ${f.type==='linked'&&f.linkedScreen?`<span class="fi-tag">→ ${SCREENS.find(s=>s.id===f.linkedScreen)?.name||'?'}</span>`:''}
+        </div>
+      </div>
+      <button class="btn bg sm" onclick="openFieldModal('${sc.id}','${f.id}')">✏ Editar</button>
+      <button class="btn bd sm" onclick="deleteField('${sc.id}','${f.id}')">🗑</button>
+    </div>`).join('')}
+    ${!fields.length?`<div style="text-align:center;padding:24px;color:var(--t3);font-size:12px;border:1px dashed var(--br);border-radius:var(--r)">Nenhum campo. Clique em "+ Novo campo" para começar.</div>`:''}
+  </div>`;
+}
+
+// ─── COMMANDS CONFIG ───
+function renderCmdsCfg(sc){
+  const cmds=sc.commands||[];
+  return `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+    <p style="font-size:12px;color:var(--t2)">Comandos aparecem como botões em cada linha da tabela.</p>
+    <button class="btn bp sm" onclick="openCmdModal('${sc.id}',null)">+ Novo comando</button>
+  </div>
+  ${cmds.map(c=>`<div class="fi">
+    <span style="font-size:20px">${c.icon||'▶'}</span>
+    <div class="fi-info">
+      <div class="fi-name">${c.name}</div>
+      <div class="fi-tags">
+        ${c.targetScreen?`<span class="fi-tag">→ ${SCREENS.find(s=>s.id===c.targetScreen)?.name||'?'}</span>`:'<span class="fi-tag">sem movimentação</span>'}
+        <span class="fi-tag">${(c.fields||[]).length} campo(s) adicional(is)</span>
+        ${c.description?`<span class="fi-tag">${c.description.substring(0,30)}</span>`:''}
+      </div>
+    </div>
+    <button class="btn bg sm" onclick="openCmdModal('${sc.id}','${c.id}')">✏ Editar</button>
+    <button class="btn bd sm" onclick="deleteCmd('${sc.id}','${c.id}')">🗑</button>
+  </div>`).join('')}
+  ${!cmds.length?`<div style="text-align:center;padding:24px;color:var(--t3);font-size:12px;border:1px dashed var(--br);border-radius:var(--r)">Nenhum comando. Comandos permitem mover registros entre telas.</div>`:''}`;
+}
+
+// ─── GENERAL CONFIG ───
+function renderGenCfg(sc){
+  return `<div class="fg"><label>Nome da tela</label><input id="gc-name" value="${sc.name}"></div>
+  <div class="r2">
+    <div class="fg"><label>Ícone (emoji)</label><input id="gc-icon" value="${sc.icon||'📋'}" style="font-size:18px"></div>
+    <div class="fg"><label>Posição na sidebar</label><input type="number" id="gc-order" value="${sc.order||0}"></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:6px">
+    <button class="btn bp" onclick="saveScreenGen('${sc.id}')">Salvar</button>
+    <button class="btn bd" onclick="deleteScreen('${sc.id}')">🗑 Excluir tela</button>
+  </div>`;
+}
+
+async function saveScreenGen(sid){
+  await db.collection('screens').doc(sid).update({name:val('gc-name'),icon:val('gc-icon'),order:parseInt(val('gc-order'))||0});
+  closeModal();await loadScreens();goScreen(sid);
+}
+async function deleteScreen(sid){
+  if(!confirm('Excluir esta tela e todos os registros? Irreversível.'))return;
+  const snap=await db.collection('records').where('screenId','==',sid).get();
+  const batch=db.batch();
+  snap.docs.forEach(d=>batch.delete(d.ref));
+  batch.delete(db.collection('screens').doc(sid));
+  await batch.commit();
+  closeModal();await loadScreens();goHome();
+}
+
+// ══════════════ FIELD MODAL ══════════════
+function openFieldModal(sid,fid){
+  if(!isMaster)return;
+  const sc=SCREENS.find(s=>s.id===sid);
+  const ex=fid?(sc?.fields||[]).find(f=>f.id===fid):null;
+  const sOpts=SCREENS.filter(s=>s.id!==sid).map(s=>`<option value="${s.id}" ${ex?.linkedScreen===s.id?'selected':''}>${s.name}</option>`).join('');
+  openModal(`<div class="modal lg">
+    <div class="mh"><div class="mh-t">${ex?'Editar':'Novo'} campo</div><button class="mx" onclick="closeModal()">✕</button></div>
+    <div class="mb">
+      <div class="r2">
+        <div class="fg"><label>Nome do campo <span style="color:var(--e)">*</span></label>
+          <input id="fn-name" value="${ex?.name||''}" placeholder="Ex: Código do Produto">
+        </div>
+        <div class="fg"><label>Tipo de dado</label>
+          <select id="fn-type" onchange="toggleFType()">
+            <option value="text"     ${ex?.type==='text'?'selected':''}>📝 Texto</option>
+            <option value="number"   ${ex?.type==='number'?'selected':''}>🔢 Número</option>
+            <option value="date"     ${ex?.type==='date'?'selected':''}>📅 Data</option>
+            <option value="textarea" ${ex?.type==='textarea'?'selected':''}>📄 Texto longo</option>
+            <option value="select"   ${ex?.type==='select'?'selected':''}>📋 Seleção (lista)</option>
+            <option value="linked"   ${ex?.type==='linked'?'selected':''}>🔗 Vinculado a tela</option>
+          </select>
+        </div>
+      </div>
+      <div id="fn-opts-w" style="${ex?.type==='select'?'':'display:none'}">
+        <div class="fg"><label>Opções da lista (uma por linha)</label>
+          <textarea id="fn-opts" placeholder="Opção A&#10;Opção B&#10;Opção C">${(ex?.options||[]).join('\n')}</textarea>
+        </div>
+      </div>
+      <div id="fn-link-w" style="${ex?.type==='linked'?'':'display:none'}">
+        <div class="fg"><label>Tela vinculada (fonte de dados)</label>
+          <select id="fn-link"><option value="">Selecionar tela…</option>${sOpts}</select>
+        </div>
+      </div>
+      <div class="sep"></div>
+      <div class="sec">Comportamento do campo</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <label class="chk"><input type="checkbox" id="fn-req"  ${ex?.required?'checked':''}><span>Obrigatório</span></label>
+        <label class="chk"><input type="checkbox" id="fn-edit" ${ex?.editable!==false?'checked':''}><span>Editável após registro</span></label>
+        <label class="chk"><input type="checkbox" id="fn-uniq" ${ex?.unique?'checked':''}><span>Valor único (sem repetição)</span></label>
+        <label class="chk"><input type="checkbox" id="fn-show" ${ex?.showInTable!==false?'checked':''}><span>Exibir na tabela</span></label>
+      </div>
+    </div>
+    <div class="mf">
+      ${ex?`<button class="btn bd" onclick="deleteField('${sid}','${fid}')">🗑 Excluir campo</button>`:''}
+      <button class="btn bs" onclick="openScreenCfg('${sid}')">← Voltar</button>
+      <button class="btn bp" onclick="saveField('${sid}','${fid||''}')">Salvar campo</button>
+    </div>
+  </div>`);
+}
+
+function toggleFType(){
+  const t=val('fn-type');
+  $('fn-opts-w').style.display=t==='select'?'block':'none';
+  $('fn-link-w').style.display=t==='linked'?'block':'none';
+}
+
+async function saveField(sid,fid){
+  const name=val('fn-name').trim();
+  if(!name){alert('Digite o nome do campo.');return}
+  const field={
+    id:fid||'f'+Date.now(),name,type:val('fn-type'),
+    required:$('fn-req').checked,
+    editable:$('fn-edit').checked,
+    unique:$('fn-uniq').checked,
+    showInTable:$('fn-show').checked,
+    order:fid?(SCREENS.find(s=>s.id===sid)?.fields?.find(f=>f.id===fid)?.order||0):(SCREENS.find(s=>s.id===sid)?.fields||[]).length
+  };
+  if(field.type==='select') field.options=val('fn-opts').split('\n').map(s=>s.trim()).filter(Boolean);
+  if(field.type==='linked') field.linkedScreen=val('fn-link');
+  const sc=SCREENS.find(s=>s.id===sid);
+  let fields=[...(sc?.fields||[])];
+  const idx=fields.findIndex(f=>f.id===fid);
+  if(idx>=0)fields[idx]=field;else fields.push(field);
+  await db.collection('screens').doc(sid).update({fields});
+  closeModal();await loadScreens();openScreenCfg(sid);
+}
+
+async function deleteField(sid,fid){
+  if(!confirm('Remover este campo? Dados existentes não são apagados.'))return;
+  const sc=SCREENS.find(s=>s.id===sid);
+  const fields=(sc?.fields||[]).filter(f=>f.id!==fid);
+  await db.collection('screens').doc(sid).update({fields});
+  closeModal();await loadScreens();openScreenCfg(sid);
+}
+
+// ══════════════ COMMAND MODAL ══════════════
+function openCmdModal(sid,cid){
+  if(!isMaster)return;
+  const sc=SCREENS.find(s=>s.id===sid);
+  const ex=cid?(sc?.commands||[]).find(c=>c.id===cid):null;
+  const sOpts=SCREENS.map(s=>`<option value="${s.id}" ${ex?.targetScreen===s.id?'selected':''}>${s.name}</option>`).join('');
+  _cafFields=(ex?.fields||[]).map(f=>({...f}));
+
+  openModal(`<div class="modal lg">
+    <div class="mh"><div class="mh-t">${ex?'Editar':'Novo'} comando</div><button class="mx" onclick="closeModal()">✕</button></div>
+    <div class="mb">
+      <div class="r2">
+        <div class="fg"><label>Nome do comando <span style="color:var(--e)">*</span></label><input id="cm-name" value="${ex?.name||''}" placeholder="Ex: Enviar para Conferência"></div>
+        <div class="fg"><label>Ícone (emoji)</label><input id="cm-icon" value="${ex?.icon||'▶'}"></div>
+      </div>
+      <div class="fg"><label>Descrição exibida no formulário</label><input id="cm-desc" value="${ex?.description||''}" placeholder="Instrução para o operador (opcional)"></div>
+      <div class="fg">
+        <label>Mover registro para tela (após confirmar)</label>
+        <select id="cm-target"><option value="">Não mover — apenas atualizar dados</option>${sOpts}</select>
+        <div class="hint">Ao mover, o registro sai desta tela e vai para a selecionada, mantendo todos os dados anteriores.</div>
+      </div>
+      <div class="sep"></div>
+      <div class="sec">Campos adicionais coletados por este comando</div>
+      <div class="hint" style="margin-bottom:10px">Estes campos aparecerão no formulário quando o operador executar o comando.</div>
+      <div id="caf-list">${_cafFields.map((f,i)=>cafRow(f,i)).join('')}</div>
+      <button class="btn bs sm" style="margin-top:8px" onclick="addCaf()">+ Adicionar campo</button>
+    </div>
+    <div class="mf">
+      ${cid?`<button class="btn bd" onclick="deleteCmd('${sid}','${cid}')">🗑 Excluir</button>`:''}
+      <button class="btn bs" onclick="openScreenCfg('${sid}')">← Voltar</button>
+      <button class="btn bp" onclick="saveCmd('${sid}','${cid||''}')">Salvar comando</button>
+    </div>
+  </div>`);
+}
+
+function cafRow(f,i){
+  return `<div class="fi" id="caf-${i}">
+    <div style="flex:1"><input type="text" value="${f.name}" style="background:var(--b3);width:100%" placeholder="Nome do campo" onchange="if(_cafFields[${i}])_cafFields[${i}].name=this.value"></div>
+    <select style="background:var(--b3);border:1px solid var(--br2);border-radius:var(--r);padding:8px 10px;color:var(--t1);font-size:12px;font-family:'Sora',sans-serif;min-width:90px" onchange="if(_cafFields[${i}])_cafFields[${i}].type=this.value">
+      ${['text','number','date'].map(t=>`<option value="${t}" ${f.type===t?'selected':''}>${t}</option>`).join('')}
+    </select>
+    <button class="btn bd sm" onclick="removeCaf(${i})">🗑</button>
+  </div>`;
+}
+
+function addCaf(){
+  const i=_cafFields.length;
+  _cafFields.push({id:'cf'+Date.now(),name:'Campo '+(i+1),type:'text',required:false});
+  const list=$('caf-list');
+  const tmp=document.createElement('div');tmp.innerHTML=cafRow(_cafFields[i],i);
+  list.appendChild(tmp.firstChild);
+}
+
+function removeCaf(i){const el=$('caf-'+i);if(el)el.remove();_cafFields[i]=null}
+
+async function saveCmd(sid,cid){
+  const name=val('cm-name').trim();if(!name){alert('Digite o nome do comando.');return}
+  const cmd={
+    id:cid||'cmd'+Date.now(),name,
+    icon:val('cm-icon')||'▶',description:val('cm-desc'),
+    targetScreen:val('cm-target'),
+    fields:_cafFields.filter(Boolean)
+  };
+  const sc=SCREENS.find(s=>s.id===sid);
+  let cmds=[...(sc?.commands||[])];
+  const idx=cmds.findIndex(c=>c.id===cid);
+  if(idx>=0)cmds[idx]=cmd;else cmds.push(cmd);
+  await db.collection('screens').doc(sid).update({commands:cmds});
+  closeModal();await loadScreens();openScreenCfg(sid);
+}
+
+async function deleteCmd(sid,cid){
+  if(!confirm('Excluir este comando?'))return;
+  const sc=SCREENS.find(s=>s.id===sid);
+  const cmds=(sc?.commands||[]).filter(c=>c.id!==cid);
+  await db.collection('screens').doc(sid).update({commands:cmds});
+  closeModal();await loadScreens();openScreenCfg(sid);
+}
+
+// ══════════════ MANAGE SCREENS ══════════════
+function goManage(){
+  if(!isMaster)return;
+  setActive('manage');setTitle('Gerenciar Telas');renderTopRight();
+  $('page-area').innerHTML=`<p style="font-size:12px;color:var(--t2);margin-bottom:16px">Crie, configure e organize as telas do sistema. Cada tela tem seu próprio formulário, tabela, comandos e gráficos.</p>
+  <div class="sc-grid">
+    ${SCREENS.map(s=>`<div class="sc-card">
+      <div class="sc-ico">${s.icon||'📋'}</div>
+      <div class="sc-name">${s.name}</div>
+      <div class="sc-meta">${(s.fields||[]).length} campos · ${(s.commands||[]).length} comandos · ${(s.charts||[]).length} gráficos</div>
+      <div style="display:flex;gap:6px;margin-top:12px">
+        <button class="btn bs sm" onclick="goScreen('${s.id}')">Ver</button>
+        <button class="btn bp sm" onclick="openScreenCfg('${s.id}')">⚙ Configurar</button>
+      </div>
+    </div>`).join('')}
+    <div class="sc-card sc-add" onclick="openCreateScreen()">
+      <span style="font-size:22px">+</span><span style="font-size:11px">Nova tela</span>
+    </div>
+  </div>`;
+}
+
+function openCreateScreen(){
+  if(!isMaster)return;
+  openModal(`<div class="modal sm">
+    <div class="mh"><div class="mh-t">Nova tela</div><button class="mx" onclick="closeModal()">✕</button></div>
+    <div class="mb">
+      <div class="fg"><label>Nome da tela <span style="color:var(--e)">*</span></label><input id="ns-name" placeholder="Ex: Conferência, Expedição, Qualidade…" onkeydown="if(event.key==='Enter')createScreen()"></div>
+      <div class="r2">
+        <div class="fg"><label>Ícone (emoji)</label><input id="ns-icon" value="📋" style="font-size:18px"></div>
+        <div class="fg"><label>Posição</label><input type="number" id="ns-ord" value="${SCREENS.length}"></div>
+      </div>
+    </div>
+    <div class="mf"><button class="btn bs" onclick="closeModal()">Cancelar</button><button class="btn bp" onclick="createScreen()">Criar tela</button></div>
+  </div>`);
+}
+
+async function createScreen(){
+  const name=val('ns-name').trim();if(!name){alert('Digite o nome.');return}
+  await db.collection('screens').doc().set({
+    name,icon:val('ns-icon')||'📋',order:parseInt(val('ns-ord'))||SCREENS.length,
+    fields:[],commands:[],charts:[],createdAt:FV.serverTimestamp()
+  });
+  closeModal();await loadScreens();goManage();
+}
+
+// ══════════════ USERS ══════════════
+async function goUsers(){
+  if(!isMaster)return;
+  setActive('users');setTitle('Usuários');renderTopRight();
+  $('page-area').innerHTML=`<div class="loading"><div class="spin"></div>Carregando…</div>`;
+  const snap=await db.collection('users').orderBy('createdAt','desc').get();
+  const users=snap.docs.map(d=>({id:d.id,...d.data()}));
+  const COLS=['#4f6cf5','#1ec46a','#f5a733','#ef4f4f','#1ab8d5','#ec4899','#a855f7'];
+  const ROLES=[
+    {value:'viewer',   label:'👁 Só visualizar'},
+    {value:'operator', label:'🖊 Operador'},
+    {value:'admin',    label:'🔧 Administrador'},
+    {value:'blocked',  label:'🚫 Bloqueado'},
+  ];
+  $('page-area').innerHTML=`
+    <div class="card" style="margin-bottom:16px">
+      <div class="c-body" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:10px;font-size:11px">
+        <div style="padding:10px;background:var(--b2);border-radius:var(--r)"><div style="font-size:18px;margin-bottom:4px">👁</div><strong>Visualizador</strong><p style="color:var(--t3);margin-top:4px">Acessa e vê os registros, mas não pode criar nem mover.</p></div>
+        <div style="padding:10px;background:var(--b2);border-radius:var(--r)"><div style="font-size:18px;margin-bottom:4px">🖊</div><strong>Operador</strong><p style="color:var(--t3);margin-top:4px">Cria registros e executa movimentações.</p></div>
+        <div style="padding:10px;background:var(--b2);border-radius:var(--r)"><div style="font-size:18px;margin-bottom:4px">🔧</div><strong>Administrador</strong><p style="color:var(--t3);margin-top:4px">Edita/exclui registros e exporta dados.</p></div>
+        <div style="padding:10px;background:var(--b2);border-radius:var(--r)"><div style="font-size:18px;margin-bottom:4px">🔐</div><strong>Master</strong><p style="color:var(--t3);margin-top:4px">Acesso total com senha especial. Edita estrutura do sistema.</p></div>
+      </div>
+    </div>
+    ${users.map((u,i)=>{
+      const ini=(u.name||u.email||'?').trim().split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+      const col=COLS[i%COLS.length];
+      const isMe=u.id===CU.uid;
+      return `<div class="u-row">
+        <div class="u-av2" style="background:${col}18;color:${col};border:1px solid ${col}30">${ini}</div>
+        <div class="u-meta">
+          <div class="u-nm2">${u.name||'—'} ${isMe?'<span class="bdg b-a" style="font-size:9px">você</span>':''}</div>
+          <div class="u-em">${u.email||'—'}</div>
+        </div>
+        ${isMe
+          ? `<span class="bdg b-a">${u.role}</span>`
+          : `<div class="u-ctrl">
+              <select class="role-sel" onchange="setUserRole('${u.id}',this.value)">
+                ${ROLES.map(r=>`<option value="${r.value}" ${u.role===r.value?'selected':''}>${r.label}</option>`).join('')}
+              </select>
+            </div>`
+        }
+      </div>`;
+    }).join('')}`;
+}
+
+async function setUserRole(uid,role){
+  await db.collection('users').doc(uid).update({role});
+  await addAudit('user-role',null,uid,`Perfil alterado para "${role}"`);
+}
+
+// ══════════════ AUDIT ══════════════
+async function goAudit(){
+  if(!canAdmin())return;
+  setActive('audit');setTitle('Auditoria');renderTopRight();
+  $('page-area').innerHTML=`<div class="loading"><div class="spin"></div>Carregando…</div>`;
+  const snap=await db.collection('audit').orderBy('at','desc').limit(200).get();
+  const logs=snap.docs.map(d=>d.data());
+  $('page-area').innerHTML=`<div class="card"><div class="c-head"><div class="c-title">📋 Últimas 200 ações</div></div>
+    <div class="c-body">
+      ${!logs.length?`<div class="empty-r"><div class="empty-ico">📭</div>Nenhum log ainda</div>`
+        :logs.map(l=>`<div class="a-row"><div class="a-dot"></div>
+          <div><div class="a-txt">${l.action}</div>
+          <div class="a-meta">Por <strong>${l.user?.name||'—'}</strong> · ${l.at?.toDate?l.at.toDate().toLocaleString('pt-BR'):'—'}</div></div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+async function addAudit(type,sid,rid,action){
+  try{await db.collection('audit').add({
+    type,screenId:sid,recordId:rid,action,
+    user:{uid:CU.uid,name:UP?.name||CU.email},
+    at:FV.serverTimestamp()
+  })}catch(_){}
+}
+</script>
+</body>
+</html>
