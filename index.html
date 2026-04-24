@@ -305,7 +305,29 @@ tr:hover td{background:var(--bg3)}
 
 <!-- Toast -->
 <div class="toast" id="toast"></div>
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-app.js";
+  import { getFirestore } from "https://www.gstatic.com/firebasejs/10.11.1/firebase-firestore.js";
 
+  // Configuração do Firebase
+  const firebaseConfig = {
+    apiKey: "AIzaSyADZphyLztYYeMV130uyq_3CYthr6QzBo0",
+    authDomain: "coringa-c0bce.firebaseapp.com",
+    projectId: "coringa-c0bce",
+    storageBucket: "coringa-c0bce.firebasestorage.app",
+    messagingSenderId: "346363639454",
+    appId: "1:346363639454:web:38b288fe0d7abf66daad8f"
+  };
+
+  // Inicializar
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Torna acessível no restante do sistema
+  window.db = db;
+  
+</script>
 <script>
 const state = {
   isMaster: false,
