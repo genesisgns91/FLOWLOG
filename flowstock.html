@@ -1,0 +1,1495 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlowStock</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ─── NORMAL THEME ─── */
+:root {
+  --bg0:#0c0d10; --bg1:#111318; --bg2:#181a20; --bg3:#1f2129; --bg4:#272a35;
+  --bdr:#252830; --bdr2:#31354a;
+  --t1:#dfe1f0; --t2:#7f849e; --t3:#4a4e66;
+  --acc:#4f6ef7; --acc2:#738af9; --acc-bg:rgba(79,110,247,.1); --acc-bdr:rgba(79,110,247,.28);
+  --ok:#20c464; --ok-bg:rgba(32,196,100,.09);
+  --warn:#f5a623; --warn-bg:rgba(245,166,35,.09);
+  --err:#f04f4f; --err-bg:rgba(240,79,79,.09);
+  --info:#22b8d4; --info-bg:rgba(34,184,212,.09);
+  --r:7px; --rl:12px; --rx:16px;
+  --sw:230px; --font:'Sora',sans-serif; --mono:'JetBrains Mono',monospace;
+}
+/* ─── MASTER THEME (lighter) ─── */
+:root.master {
+  --bg0:#141620; --bg1:#1c1f2d; --bg2:#23273a; --bg3:#2b2f45; --bg4:#343855;
+  --bdr:#2e3248; --bdr2:#404672;
+  --t1:#eceffe; --t2:#9099c2; --t3:#606485;
+  --acc:#607aff; --acc2:#8494ff; --acc-bg:rgba(96,122,255,.13); --acc-bdr:rgba(96,122,255,.3);
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font);font-size:14px;line-height:1.5;background:var(--bg0);color:var(--t1);-webkit-font-smoothing:antialiased;transition:background .4s,color .3s}
+
+/* ─── AUTH ─── */
+#auth{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg0);position:relative;overflow:hidden}
+#auth::before{content:'';position:absolute;width:600px;height:600px;background:radial-gradient(circle at center,rgba(79,110,247,.06) 0%,transparent 70%);top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none}
+.auth-box{width:360px;background:var(--bg1);border:1px solid var(--bdr);border-radius:var(--rx);padding:36px;position:relative;z-index:1;box-shadow:0 24px 80px rgba(0,0,0,.5)}
+.auth-logo{display:flex;align-items:center;gap:10px;margin-bottom:30px}
+.auth-logo-mark{width:36px;height:36px;background:var(--acc);border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;box-shadow:0 4px 16px rgba(79,110,247,.4)}
+.auth-logo h1{font-size:20px;font-weight:600;letter-spacing:-.4px}
+.auth-logo p{font-size:11px;color:var(--t3);margin-top:1px}
+.seg{display:flex;background:var(--bg2);border-radius:var(--r);padding:3px;gap:2px;margin-bottom:22px}
+.seg-btn{flex:1;text-align:center;padding:7px;border-radius:5px;cursor:pointer;font-size:12px;font-weight:500;color:var(--t3);transition:all .15s;user-select:none}
+.seg-btn.on{background:var(--bg3);color:var(--t1);box-shadow:0 1px 4px rgba(0,0,0,.25)}
+.fg{margin-bottom:13px}
+.fg label{display:block;font-size:11px;font-weight:500;color:var(--t2);margin-bottom:5px;letter-spacing:.15px}
+input,select,textarea{width:100%;background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:8px 11px;color:var(--t1);font-family:var(--font);font-size:13px;outline:none;transition:border .15s,-webkit-appearance 0s;appearance:none;-webkit-appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--acc)}
+input::placeholder,textarea::placeholder{color:var(--t3)}
+select option{background:var(--bg2)}
+textarea{resize:vertical;min-height:72px;line-height:1.5}
+.msg{font-size:11px;margin-top:6px;display:none;padding:7px 10px;border-radius:var(--r)}
+.msg-err{background:var(--err-bg);color:var(--err);border:1px solid rgba(240,79,79,.2)}
+.msg-ok{background:var(--ok-bg);color:var(--ok);border:1px solid rgba(32,196,100,.2)}
+
+/* ─── BUTTONS ─── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:8px 14px;border-radius:var(--r);border:none;cursor:pointer;font-family:var(--font);font-size:12px;font-weight:500;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.btn-p{background:var(--acc);color:#fff;box-shadow:0 2px 8px rgba(79,110,247,.3)}.btn-p:hover{background:var(--acc2)}
+.btn-s{background:var(--bg3);color:var(--t1);border:1px solid var(--bdr)}.btn-s:hover{background:var(--bg4);border-color:var(--bdr2)}
+.btn-d{background:var(--err-bg);color:var(--err);border:1px solid rgba(240,79,79,.2)}.btn-d:hover{background:rgba(240,79,79,.18)}
+.btn-g{background:transparent;color:var(--t2)}.btn-g:hover{background:var(--bg3);color:var(--t1)}
+.btn-warn{background:var(--warn-bg);color:var(--warn);border:1px solid rgba(245,166,35,.2)}
+.btn-sm{padding:5px 9px;font-size:11px}
+.btn-full{width:100%;justify-content:center}
+.btn:disabled{opacity:.4;cursor:not-allowed;pointer-events:none}
+
+/* ─── LAYOUT ─── */
+#app{display:none;min-height:100vh}
+.shell{display:flex;min-height:100vh}
+
+/* ─── SIDEBAR ─── */
+.sidebar{width:var(--sw);background:var(--bg1);border-right:1px solid var(--bdr);display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:200;overflow-y:auto;transition:background .4s,border-color .4s}
+.sb-top{padding:14px 12px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;gap:8px}
+.sb-mark{width:28px;height:28px;background:var(--acc);border-radius:7px;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;transition:background .3s}
+.sb-name{font-size:13px;font-weight:600;flex:1;letter-spacing:-.2px}
+.master-chip{font-size:9px;background:rgba(255,200,50,.12);color:#ffc832;border:1px solid rgba(255,200,50,.25);border-radius:20px;padding:2px 6px;font-weight:600;letter-spacing:.3px;display:none}
+.sb-nav{flex:1;padding:7px}
+.nav-section-label{font-size:9px;color:var(--t3);font-weight:600;letter-spacing:.8px;text-transform:uppercase;padding:9px 8px 4px}
+.ni{display:flex;align-items:center;gap:7px;padding:7px 9px;border-radius:var(--r);cursor:pointer;color:var(--t2);font-size:12px;font-weight:400;transition:all .12s;user-select:none}
+.ni:hover{background:var(--bg3);color:var(--t1)}
+.ni.on{background:var(--acc-bg);color:var(--acc2)}
+.ni-ico{width:16px;text-align:center;font-size:13px;flex-shrink:0}
+.sb-foot{padding:10px;border-top:1px solid var(--bdr)}
+.user-pill{display:flex;align-items:center;gap:8px;padding:8px;border-radius:var(--r);background:var(--bg2)}
+.user-av{width:28px;height:28px;border-radius:50%;background:var(--acc-bg);border:1px solid var(--acc-bdr);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:var(--acc2);flex-shrink:0}
+.user-meta{flex:1;min-width:0}
+.user-nm{font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-rl{font-size:9px;color:var(--t3)}
+
+/* ─── MAIN ─── */
+.main{margin-left:var(--sw);flex:1;display:flex;flex-direction:column}
+.topbar{background:var(--bg1);border-bottom:1px solid var(--bdr);padding:0 22px;height:52px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:100;transition:background .4s}
+.topbar-title{font-size:14px;font-weight:600;flex:1;letter-spacing:-.2px}
+.page{padding:22px;flex:1}
+
+/* ─── CARD ─── */
+.card{background:var(--bg1);border:1px solid var(--bdr);border-radius:var(--rl)}
+.card-head{padding:14px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+.card-title{font-size:13px;font-weight:600}
+.card-body{padding:18px}
+
+/* ─── TABLE ─── */
+.tbl-outer{overflow-x:auto;border:1px solid var(--bdr);border-radius:var(--rl)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{background:var(--bg2);padding:9px 13px;text-align:left;font-size:10px;color:var(--t2);font-weight:600;letter-spacing:.4px;text-transform:uppercase;border-bottom:1px solid var(--bdr);white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:var(--t1)}
+tbody tr{border-bottom:1px solid var(--bdr);transition:background .07s}
+tbody tr:last-child{border-bottom:none}
+tbody tr:hover{background:var(--bg2)}
+tbody td{padding:9px 13px;color:var(--t2);vertical-align:middle;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+tbody td:first-child{color:var(--t1)}
+.empty-state{text-align:center;padding:44px 20px;color:var(--t3)}
+.empty-icon{font-size:28px;margin-bottom:10px}
+
+/* ─── TOOLBAR ─── */
+.toolbar{display:flex;align-items:center;gap:8px;margin-bottom:13px;flex-wrap:wrap}
+.search-box{position:relative;flex:1;min-width:180px}
+.search-box input{padding-left:30px;font-size:12px}
+.search-ico{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;font-size:12px}
+
+/* ─── MODAL ─── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:1000;display:flex;align-items:center;justify-content:center;padding:16px}
+.modal{background:var(--bg1);border:1px solid var(--bdr);border-radius:var(--rx);width:100%;display:flex;flex-direction:column;max-height:92vh;animation:mIn .18s ease}
+.modal-sm{max-width:400px}.modal-md{max-width:540px}.modal-lg{max-width:700px}.modal-xl{max-width:920px}
+@keyframes mIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.mh{padding:16px 18px;border-bottom:1px solid var(--bdr);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.mh-title{font-size:14px;font-weight:600}
+.mb{padding:18px;overflow-y:auto;flex:1}
+.mf{padding:12px 18px;border-top:1px solid var(--bdr);display:flex;align-items:center;justify-content:flex-end;gap:8px;flex-shrink:0}
+.mf .btn-d{margin-right:auto}
+.mx-btn{background:none;border:none;color:var(--t3);cursor:pointer;font-size:15px;padding:4px 7px;border-radius:5px;transition:all .1s;line-height:1}
+.mx-btn:hover{color:var(--t1);background:var(--bg3)}
+
+/* ─── FORM HELPERS ─── */
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.row3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.check-item{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:var(--r);border:1px solid var(--bdr);cursor:pointer;transition:border .15s;user-select:none}
+.check-item:hover{border-color:var(--bdr2)}
+.check-item input[type=checkbox]{accent-color:var(--acc);width:13px;height:13px;cursor:pointer;flex-shrink:0}
+.check-item span{font-size:12px}
+.field-hint{font-size:10px;color:var(--t3);margin-top:3px}
+.sep{height:1px;background:var(--bdr);margin:16px 0}
+.sec-lbl{font-size:11px;font-weight:600;color:var(--t2);margin-bottom:9px}
+
+/* ─── BADGE ─── */
+.badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600}
+.b-ok{background:var(--ok-bg);color:var(--ok)}.b-acc{background:var(--acc-bg);color:var(--acc2)}
+.b-err{background:var(--err-bg);color:var(--err)}.b-warn{background:var(--warn-bg);color:var(--warn)}
+.b-info{background:var(--info-bg);color:var(--info)}.b-dim{background:var(--bg3);color:var(--t2)}
+
+/* ─── FIELD LIST ITEM ─── */
+.fl-item{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);padding:11px 13px;margin-bottom:7px;display:flex;align-items:center;gap:9px}
+.fl-info{flex:1;min-width:0}
+.fl-name{font-size:12px;font-weight:500;margin-bottom:3px}
+.fl-tags{display:flex;gap:4px;flex-wrap:wrap}
+.fl-tag{font-size:9px;background:var(--bg3);color:var(--t3);padding:1px 5px;border-radius:3px}
+
+/* ─── TABS ─── */
+.tab-row{display:flex;border-bottom:1px solid var(--bdr);gap:2px;margin-bottom:18px}
+.tab-btn{padding:9px 14px;font-size:12px;font-weight:500;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;transition:all .14s;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font)}
+.tab-btn.on{color:var(--acc2);border-bottom-color:var(--acc)}
+.tab-pane{display:none}.tab-pane.on{display:block}
+
+/* ─── STATS ─── */
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:10px;margin-bottom:18px}
+.stat-card{background:var(--bg1);border:1px solid var(--bdr);border-radius:var(--rl);padding:14px 16px}
+.stat-lbl{font-size:9px;color:var(--t3);font-weight:600;letter-spacing:.5px;text-transform:uppercase;margin-bottom:6px}
+.stat-val{font-size:26px;font-weight:600;font-family:var(--mono);letter-spacing:-1px}
+.stat-sub{font-size:10px;color:var(--t3);margin-top:2px}
+
+/* ─── CMD BUTTON ─── */
+.cmd-btn{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:var(--r);background:var(--acc-bg);color:var(--acc2);border:1px solid var(--acc-bdr);cursor:pointer;font-size:10px;font-weight:600;transition:all .15s;white-space:nowrap;font-family:var(--font)}
+.cmd-btn:hover{background:rgba(79,110,247,.2)}
+
+/* ─── USERS ─── */
+.user-row{display:flex;align-items:center;gap:12px;padding:12px 15px;background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--r);margin-bottom:8px}
+.user-row-av{width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;flex-shrink:0}
+.user-row-info{flex:1;min-width:0}
+.user-row-name{font-size:13px;font-weight:500}
+.user-row-email{font-size:10px;color:var(--t3);margin-top:1px}
+.toggle{position:relative;width:36px;height:20px;flex-shrink:0;display:inline-flex;align-items:center}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{width:36px;height:20px;background:var(--bg4);border-radius:10px;position:relative;cursor:pointer;transition:background .2s;border:1px solid var(--bdr2)}
+.toggle input:checked+.toggle-track{background:var(--acc);border-color:var(--acc)}
+.toggle-track::after{content:'';position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.toggle input:checked+.toggle-track::after{transform:translateX(16px)}
+.toggle-lbl{font-size:10px;color:var(--t2);margin-left:4px}
+
+/* ─── CHART ─── */
+.chart-wrap{position:relative;height:240px}
+
+/* ─── SCREEN GRID ─── */
+.sc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:10px}
+.sc-card{background:var(--bg2);border:1px solid var(--bdr);border-radius:var(--rl);padding:16px;cursor:pointer;transition:all .14s}
+.sc-card:hover{border-color:var(--acc-bdr);background:var(--bg1)}
+.sc-card-ico{font-size:24px;margin-bottom:10px}
+.sc-card-name{font-size:13px;font-weight:600;margin-bottom:3px}
+.sc-card-meta{font-size:10px;color:var(--t3)}
+.sc-card-add{border-style:dashed;display:flex;flex-direction:column;align-items:center;justify-content:center;color:var(--t3);min-height:96px;gap:5px}
+.sc-card-add:hover{color:var(--t2);border-color:var(--acc-bdr)}
+
+/* ─── AUDIT ─── */
+.audit-row{display:flex;gap:10px;padding:9px 0;border-bottom:1px solid var(--bdr)}
+.audit-row:last-child{border-bottom:none}
+.audit-dot{width:7px;height:7px;border-radius:50%;background:var(--acc);margin-top:5px;flex-shrink:0}
+.audit-text{font-size:12px;font-weight:500}
+.audit-meta{font-size:10px;color:var(--t3);margin-top:2px}
+
+/* ─── MASTER OVERLAY ─── */
+#master-screen{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:2000;display:none;align-items:center;justify-content:center}
+.master-box{background:var(--bg1);border:1px solid var(--acc-bdr);border-radius:var(--rx);padding:36px;width:320px;text-align:center;box-shadow:0 0 80px rgba(79,110,247,.2)}
+.master-ico{font-size:36px;margin-bottom:14px}
+.master-box h2{font-size:17px;font-weight:600;margin-bottom:6px}
+.master-box p{font-size:12px;color:var(--t2);margin-bottom:22px;line-height:1.6}
+
+/* ─── MISC ─── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--bdr2);border-radius:3px}
+.spin{display:inline-block;width:16px;height:16px;border:2px solid var(--bdr);border-top-color:var(--acc);border-radius:50%;animation:sp .55s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:48px;color:var(--t3);font-size:12px}
+.mono{font-family:var(--mono)}
+</style>
+</head>
+<body>
+
+<!-- ══════ AUTH ══════ -->
+<div id="auth">
+  <div class="auth-box">
+    <div class="auth-logo">
+      <div class="auth-logo-mark">⚡</div>
+      <div><h1>FlowStock</h1><p>Controle dinâmico de fluxo</p></div>
+    </div>
+    <div class="seg" id="auth-seg">
+      <div class="seg-btn on" data-tab="login" onclick="authTab('login')">Entrar</div>
+      <div class="seg-btn" data-tab="reg" onclick="authTab('reg')">Cadastrar</div>
+    </div>
+    <!-- LOGIN -->
+    <div id="p-login">
+      <div class="fg"><label>E-mail</label><input id="li-email" type="email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="fg"><label>Senha</label><input id="li-pass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="msg msg-err" id="li-err"></div>
+      <button class="btn btn-p btn-full" style="margin-top:10px" onclick="doLogin()">Entrar</button>
+    </div>
+    <!-- REGISTER -->
+    <div id="p-reg" style="display:none">
+      <div class="fg"><label>Nome completo</label><input id="reg-name" type="text" placeholder="Seu nome"></div>
+      <div class="fg"><label>E-mail</label><input id="reg-email" type="email" placeholder="seu@email.com"></div>
+      <div class="fg"><label>Senha</label><input id="reg-pass" type="password" placeholder="mínimo 6 caracteres"></div>
+      <div class="msg msg-err" id="reg-err"></div>
+      <div class="msg msg-ok" id="reg-ok"></div>
+      <button class="btn btn-p btn-full" style="margin-top:10px" onclick="doRegister()">Criar conta</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ MASTER UNLOCK ══════ -->
+<div id="master-screen">
+  <div class="master-box">
+    <div class="master-ico">🔐</div>
+    <h2>Acesso Master</h2>
+    <p>Digite a senha mestre para ativar o modo de administração completo e edição de estrutura.</p>
+    <div class="fg" style="text-align:left"><label>Senha mestre</label><input id="master-inp" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')confirmMaster()"></div>
+    <div class="msg msg-err" id="master-err" style="display:none;text-align:left;margin-bottom:8px"></div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn btn-s btn-full" onclick="closeMaster()">Cancelar</button>
+      <button class="btn btn-p btn-full" onclick="confirmMaster()">Desbloquear</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════ APP ══════ -->
+<div id="app">
+  <div class="shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sb-top">
+        <div class="sb-mark" id="sb-mark">⚡</div>
+        <div class="sb-name">FlowStock</div>
+        <span class="master-chip" id="master-chip">MASTER</span>
+      </div>
+      <nav class="sb-nav">
+        <div class="nav-section-label">Principal</div>
+        <div class="ni on" id="ni-home" onclick="goHome()"><span class="ni-ico">🏠</span> Início</div>
+        <div id="screens-nav-wrap"></div>
+        <div id="admin-nav" style="display:none">
+          <div class="nav-section-label" style="margin-top:4px">Administração</div>
+          <div class="ni" id="ni-mscreens" onclick="goManage()"><span class="ni-ico">📐</span> Telas</div>
+          <div class="ni" id="ni-users" onclick="goUsers()"><span class="ni-ico">👥</span> Usuários</div>
+          <div class="ni" id="ni-audit" onclick="goAudit()"><span class="ni-ico">📋</span> Auditoria</div>
+        </div>
+      </nav>
+      <div class="sb-foot">
+        <div class="user-pill">
+          <div class="user-av" id="uav">?</div>
+          <div class="user-meta">
+            <div class="user-nm" id="unm">…</div>
+            <div class="user-rl" id="url">usuário</div>
+          </div>
+          <button class="btn btn-g btn-sm" onclick="doLogout()" title="Sair" style="padding:4px 7px;font-size:13px">⏻</button>
+        </div>
+      </div>
+    </aside>
+
+    <div class="main">
+      <div class="topbar" id="topbar">
+        <div class="topbar-title" id="tb-title">Início</div>
+        <div id="tb-actions" style="display:flex;gap:8px;align-items:center"></div>
+      </div>
+      <div class="page" id="page"></div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+
+<script>
+// ══════════════════════════════════════════════════════════
+// FIREBASE
+// ══════════════════════════════════════════════════════════
+const fbCfg = {
+  apiKey:"AIzaSyADZphyLztYYeMV130uyq_3CYthr6QzBo0",
+  authDomain:"coringa-c0bce.firebaseapp.com",
+  projectId:"coringa-c0bce",
+  storageBucket:"coringa-c0bce.firebasestorage.app",
+  messagingSenderId:"346363639454",
+  appId:"1:346363639454:web:38b288fe0d7abf66daad8f"
+};
+firebase.initializeApp(fbCfg);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+const fsv  = firebase.firestore.FieldValue;
+
+const MASTER_PW = "LOG#001";
+
+// ══════════════════════════════════════════════════════════
+// STATE
+// ══════════════════════════════════════════════════════════
+let CU = null;      // current firebase user
+let UP = null;      // user profile from firestore
+let isAdmin = false;
+let isMaster = false;
+let SCREENS = [];
+
+// table state
+let _recs = [], _vf = [], _cmds = [], _sid = '';
+let _sortCol = null, _sortDir = 1;
+let _charts = {};
+
+// ══════════════════════════════════════════════════════════
+// AUTH HANDLERS
+// ══════════════════════════════════════════════════════════
+function authTab(t) {
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('on', b.dataset.tab === t));
+  $('p-login').style.display = t === 'login' ? 'block' : 'none';
+  $('p-reg').style.display   = t === 'reg'   ? 'block' : 'none';
+}
+
+async function doLogin() {
+  const e = val('li-email'), p = val('li-pass'), err = $('li-err');
+  hideMsg(err);
+  if (!e || !p) { showMsg(err, 'Preencha todos os campos', 'err'); return; }
+  try { await auth.signInWithEmailAndPassword(e, p); }
+  catch(ex) { showMsg(err, ex.code === 'auth/invalid-credential' ? 'E-mail ou senha incorretos.' : ex.message, 'err'); }
+}
+
+async function doRegister() {
+  const n = val('reg-name'), e = val('reg-email'), p = val('reg-pass');
+  const err = $('reg-err'), ok = $('reg-ok');
+  hideMsg(err); hideMsg(ok);
+  if (!n || !e || !p) { showMsg(err, 'Preencha todos os campos.', 'err'); return; }
+  if (p.length < 6) { showMsg(err, 'Senha deve ter ao menos 6 caracteres.', 'err'); return; }
+  try {
+    const cr = await auth.createUserWithEmailAndPassword(e, p);
+    await db.collection('users').doc(cr.user.uid).set({
+      name: n, email: e, role: 'user', active: true,
+      createdAt: fsv.serverTimestamp()
+    });
+    showMsg(ok, 'Conta criada! Redirecionando…', 'ok');
+  } catch(ex) { showMsg(err, ex.message, 'err'); }
+}
+
+function doLogout() {
+  isMaster = false;
+  document.documentElement.classList.remove('master');
+  auth.signOut();
+}
+
+auth.onAuthStateChanged(async u => {
+  if (u) {
+    CU = u;
+    const snap = await db.collection('users').doc(u.uid).get();
+    UP = snap.exists ? snap.data() : { name: u.email, role: 'user', active: true };
+    if (UP.active === false) {
+      auth.signOut();
+      alert('Sua conta está desativada. Contacte o administrador.');
+      return;
+    }
+    isAdmin = UP.role === 'admin';
+    $('auth').style.display = 'none';
+    $('app').style.display  = 'block';
+    await boot();
+  } else {
+    CU = null; UP = null; isAdmin = false; isMaster = false;
+    document.documentElement.classList.remove('master');
+    $('auth').style.display  = 'flex';
+    $('app').style.display   = 'none';
+  }
+});
+
+// ══════════════════════════════════════════════════════════
+// MASTER MODE
+// ══════════════════════════════════════════════════════════
+function openMaster() {
+  $('master-inp').value = '';
+  $('master-err').style.display = 'none';
+  $('master-screen').style.display = 'flex';
+  setTimeout(() => $('master-inp').focus(), 100);
+}
+function closeMaster() { $('master-screen').style.display = 'none'; }
+
+function confirmMaster() {
+  if ($('master-inp').value === MASTER_PW) {
+    isMaster = true;
+    document.documentElement.classList.add('master');
+    $('master-chip').style.display = 'inline';
+    $('admin-nav').style.display   = 'block';
+    closeMaster();
+    refreshUserChip();
+    goHome();
+  } else {
+    const err = $('master-err');
+    err.textContent = 'Senha incorreta.';
+    err.style.display = 'block';
+  }
+}
+
+function exitMaster() {
+  isMaster = false;
+  document.documentElement.classList.remove('master');
+  $('master-chip').style.display = 'none';
+  if (!isAdmin) $('admin-nav').style.display = 'none';
+  refreshUserChip();
+  renderTopbarActions();
+  goHome();
+}
+
+// ══════════════════════════════════════════════════════════
+// BOOT
+// ══════════════════════════════════════════════════════════
+async function boot() {
+  refreshUserChip();
+  if (isAdmin) $('admin-nav').style.display = 'block';
+  await loadScreens();
+  if (SCREENS.length === 0 && isAdmin) await seedDefaultScreen();
+  goHome();
+}
+
+function refreshUserChip() {
+  const n = UP?.name || CU?.email || '?';
+  const ini = n.trim().split(' ').slice(0,2).map(w => w[0]).join('').toUpperCase();
+  $('uav').textContent = ini;
+  $('unm').textContent = n;
+  $('url').textContent = isMaster ? 'Master Admin' : isAdmin ? 'Administrador' : 'Usuário';
+}
+
+async function loadScreens() {
+  const snap = await db.collection('screens').orderBy('order').get();
+  SCREENS = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  buildSidebarScreens();
+}
+
+function buildSidebarScreens() {
+  const wrap = $('screens-nav-wrap');
+  if (!SCREENS.length) { wrap.innerHTML = ''; return; }
+  wrap.innerHTML = `<div class="nav-section-label">Telas</div>` +
+    SCREENS.map(s => `<div class="ni" id="ni-s-${s.id}" onclick="goScreen('${s.id}')">
+      <span class="ni-ico">${s.icon || '📋'}</span>${s.name}
+    </div>`).join('');
+}
+
+async function seedDefaultScreen() {
+  const ref = db.collection('screens').doc();
+  await ref.set({
+    name: 'Entradas', icon: '📥', order: 0,
+    createdAt: fsv.serverTimestamp(),
+    fields: [
+      { id:'f1', name:'Código',         type:'text',   required:true,  unique:true,  editable:false, showInTable:true,  order:0 },
+      { id:'f2', name:'Produto',        type:'text',   required:true,  unique:false, editable:true,  showInTable:true,  order:1 },
+      { id:'f3', name:'Quantidade',     type:'number', required:true,  unique:false, editable:true,  showInTable:true,  order:2 },
+      { id:'f4', name:'Data de Entrada',type:'date',   required:true,  unique:false, editable:true,  showInTable:true,  order:3 },
+      { id:'f5', name:'Observações',    type:'textarea',required:false, unique:false, editable:true, showInTable:false, order:4 },
+    ],
+    commands: [], charts: []
+  });
+  await loadScreens();
+}
+
+// ══════════════════════════════════════════════════════════
+// HOME
+// ══════════════════════════════════════════════════════════
+async function goHome() {
+  setActive('home');
+  renderTopbarActions();
+  const pg = $('page');
+  pg.innerHTML = `<div class="loading"><div class="spin"></div> Carregando…</div>`;
+  setTitle('Início');
+
+  const counts = await Promise.all(SCREENS.map(async s => {
+    const c = (await db.collection('records').where('screenId','==',s.id).get()).size;
+    return { ...s, count: c };
+  }));
+
+  pg.innerHTML = `
+    <div class="stats-row">
+      ${counts.map(s => `<div class="stat-card">
+        <div class="stat-lbl">${s.icon || '📋'} ${s.name}</div>
+        <div class="stat-val">${s.count}</div>
+        <div class="stat-sub">registros</div>
+      </div>`).join('')}
+      <div class="stat-card">
+        <div class="stat-lbl">📐 Telas</div>
+        <div class="stat-val">${SCREENS.length}</div>
+        <div class="stat-sub">configuradas</div>
+      </div>
+    </div>
+    <div class="sc-grid">
+      ${counts.map(s => `<div class="sc-card" onclick="goScreen('${s.id}')">
+        <div class="sc-card-ico">${s.icon || '📋'}</div>
+        <div class="sc-card-name">${s.name}</div>
+        <div class="sc-card-meta">${s.count} registro(s) · ${(s.fields||[]).length} campo(s)</div>
+      </div>`).join('')}
+      ${isMaster ? `<div class="sc-card sc-card-add" onclick="openCreateScreen()">
+        <span style="font-size:20px">+</span>
+        <span style="font-size:11px">Nova tela</span>
+      </div>` : ''}
+    </div>`;
+}
+
+function renderTopbarActions() {
+  const el = $('tb-actions');
+  if (isMaster) {
+    el.innerHTML = `<button class="btn btn-warn btn-sm" onclick="exitMaster()">🔓 Sair do modo Master</button>`;
+  } else if (isAdmin) {
+    el.innerHTML = `<button class="btn btn-s btn-sm" onclick="openMaster()">🔐 Modo Master</button>`;
+  } else {
+    el.innerHTML = '';
+  }
+}
+
+// ══════════════════════════════════════════════════════════
+// SCREEN PAGE
+// ══════════════════════════════════════════════════════════
+async function goScreen(sid) {
+  const sc = SCREENS.find(s => s.id === sid);
+  if (!sc) return;
+  setActive('s-' + sid);
+  setTitle(sc.name);
+
+  const topActions = isMaster
+    ? `<button class="btn btn-s btn-sm" onclick="openScreenCfg('${sid}')">⚙ Configurar tela</button>`
+    : '';
+  $('tb-actions').innerHTML = topActions + (isMaster ? ' <button class="btn btn-warn btn-sm" onclick="exitMaster()">🔓 Sair Master</button>' : isAdmin ? `<button class="btn btn-s btn-sm" onclick="openMaster()">🔐 Modo Master</button>` : '');
+
+  $('page').innerHTML = `<div class="loading"><div class="spin"></div> Carregando…</div>`;
+
+  const snap = await db.collection('records').where('screenId','==',sid).orderBy('createdAt','desc').get();
+  const recs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const fields = (sc.fields || []).slice().sort((a,b) => a.order - b.order);
+  const vf = fields.filter(f => f.showInTable !== false);
+  const cmds = sc.commands || [];
+  const charts = sc.charts || [];
+
+  _recs = recs; _vf = vf; _cmds = cmds; _sid = sid;
+  _sortCol = null; _sortDir = 1;
+
+  const hasCharts = charts.length > 0 || isMaster;
+
+  $('page').innerHTML = `
+    <div class="tab-row">
+      <button class="tab-btn on" onclick="switchTab(this,'tp-form')">✏ Registrar</button>
+      <button class="tab-btn" onclick="switchTab(this,'tp-table')">📋 Tabela
+        <span class="badge b-dim" style="margin-left:5px">${recs.length}</span>
+      </button>
+      ${hasCharts ? `<button class="tab-btn" onclick="switchTab(this,'tp-charts');loadCharts('${sid}')">📊 Gráficos</button>` : ''}
+    </div>
+
+    <!-- REGISTER PANE -->
+    <div id="tp-form" class="tab-pane on">
+      <div class="card" style="max-width:580px">
+        <div class="card-head">
+          <div class="card-title">✏ Novo registro — ${sc.name}</div>
+        </div>
+        <div class="card-body" id="form-body">
+          ${buildFormFields(fields, sid, {})}
+          <div style="margin-top:6px">
+            <button class="btn btn-p" onclick="submitRecord('${sid}','')">Registrar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TABLE PANE -->
+    <div id="tp-table" class="tab-pane">
+      <div class="toolbar">
+        <div class="search-box">
+          <span class="search-ico">🔍</span>
+          <input id="g-search" placeholder="Buscar em todos os campos…" oninput="filterRows()">
+        </div>
+        ${isMaster ? `
+          <button class="btn btn-s btn-sm" onclick="exportCSV()">↓ CSV</button>
+          <button class="btn btn-s btn-sm" onclick="exportXLSX()">↓ XLSX</button>
+        ` : ''}
+      </div>
+      <div class="tbl-outer">
+        <table>
+          <thead><tr>
+            ${vf.map(f => `<th onclick="sortRows('${f.id}')">${f.name} <span style="opacity:.4;font-size:9px">▼</span></th>`).join('')}
+            <th>Registrado por</th>
+            <th>Data/Hora</th>
+            ${(cmds.length > 0 || isMaster) ? '<th>Ações</th>' : ''}
+          </tr></thead>
+          <tbody id="tbl-body">
+            ${recs.length ? recs.map(r => buildRow(r, vf, cmds, sid)).join('') : emptyRow(vf.length + 3)}
+          </tbody>
+        </table>
+      </div>
+      <div id="row-count" style="margin-top:8px;font-size:10px;color:var(--t3)">${recs.length} registro(s)</div>
+    </div>
+
+    <!-- CHARTS PANE -->
+    ${hasCharts ? `<div id="tp-charts" class="tab-pane">
+      <div id="charts-wrap" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px">
+        ${isMaster ? `<div class="sc-card sc-card-add" style="min-height:80px" onclick="openChartModal('${sid}',null)">
+          <span style="font-size:18px">+</span><span style="font-size:11px">Novo gráfico</span>
+        </div>` : ''}
+      </div>
+    </div>` : ''}
+  `;
+
+  // load any linked selects in the form
+  fields.filter(f => f.type === 'linked' && f.linkedScreen).forEach(f => loadLinked(f));
+}
+
+function buildFormFields(fields, sid, data = {}) {
+  if (!fields.length) return `<div class="empty-state"><div class="empty-icon">🔧</div><p style="font-size:12px">Nenhum campo configurado.<br>${isMaster ? 'Configure campos em ⚙ Configurar tela.' : ''}</p></div>`;
+  return fields.map(f => {
+    const val = data[f.id] ?? '';
+    let input = '';
+    if (f.type === 'textarea') {
+      input = `<textarea id="ff-${f.id}" ${f.required ? 'required' : ''}>${val}</textarea>`;
+    } else if (f.type === 'select') {
+      const opts = (f.options || []).map(o => `<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('');
+      input = `<select id="ff-${f.id}" ${f.required ? 'required' : ''}><option value="">Selecionar…</option>${opts}</select>`;
+    } else if (f.type === 'linked') {
+      input = `<select id="ff-${f.id}" ${f.required ? 'required' : ''}><option value="">Carregando…</option></select>`;
+    } else {
+      const t = f.type === 'number' ? 'number' : (f.type === 'date' ? 'date' : 'text');
+      input = `<input type="${t}" id="ff-${f.id}" value="${val}" ${f.required ? 'required' : ''} placeholder="${f.name}…">`;
+    }
+    return `<div class="fg">
+      <label>${f.name}${f.required ? ' <span style="color:var(--err)">*</span>' : ''}</label>
+      ${input}
+    </div>`;
+  }).join('');
+}
+
+async function loadLinked(field) {
+  const el = $('ff-' + field.id);
+  if (!el) return;
+  const snap = await db.collection('records').where('screenId','==',field.linkedScreen).get();
+  const sc = SCREENS.find(s => s.id === field.linkedScreen);
+  const firstField = (sc?.fields || []).filter(f => f.unique)[0] || (sc?.fields || [])[0];
+  el.innerHTML = '<option value="">Selecionar…</option>';
+  snap.docs.forEach(d => {
+    const v = d.data().data?.[firstField?.id] || d.id;
+    el.innerHTML += `<option value="${v}">${v}</option>`;
+  });
+}
+
+function buildRow(r, vf, cmds, sid) {
+  const cells = vf.map(f => {
+    let v = r.data?.[f.id] ?? '';
+    if (f.type === 'date' && v) v = new Date(v + 'T00:00:00').toLocaleDateString('pt-BR');
+    return `<td title="${v || ''}">${v || '<span style="color:var(--t3)">—</span>'}</td>`;
+  }).join('');
+  const by = r.createdBy?.name || '—';
+  const at = r.createdAt?.toDate ? r.createdAt.toDate().toLocaleString('pt-BR') : '—';
+  const cmdBtns = cmds.map(c =>
+    `<button class="cmd-btn" onclick="execCmd('${c.id}','${r.id}','${sid}')">${c.icon || '▶'} ${c.name}</button>`
+  ).join(' ');
+  const adminBtns = isMaster ? `
+    <button class="btn btn-g btn-sm" onclick="openEditRecord('${r.id}','${sid}')" title="Editar">✏</button>
+    <button class="btn btn-d btn-sm" onclick="deleteRecord('${r.id}','${sid}')" title="Excluir">🗑</button>
+  ` : '';
+  const hasAct = cmds.length > 0 || isMaster;
+  return `<tr id="row-${r.id}">
+    ${cells}
+    <td style="color:var(--t2)">${by}</td>
+    <td style="color:var(--t2);font-family:var(--mono);font-size:10px">${at}</td>
+    ${hasAct ? `<td style="white-space:nowrap">${cmdBtns} ${adminBtns}</td>` : ''}
+  </tr>`;
+}
+
+function emptyRow(cols) {
+  return `<tr><td colspan="${cols}"><div class="empty-state"><div class="empty-icon">📭</div><p style="font-size:12px">Nenhum registro ainda</p></div></td></tr>`;
+}
+
+// ══════════════════════════════════════════════════════════
+// TABLE OPS
+// ══════════════════════════════════════════════════════════
+function filterRows() {
+  const q = ($('g-search')?.value || '').toLowerCase();
+  let n = 0;
+  document.querySelectorAll('#tbl-body tr').forEach(tr => {
+    const show = !q || tr.textContent.toLowerCase().includes(q);
+    tr.style.display = show ? '' : 'none';
+    if (show) n++;
+  });
+  const el = $('row-count');
+  if (el) el.textContent = n + ' registro(s)';
+}
+
+function sortRows(fid) {
+  if (_sortCol === fid) _sortDir *= -1; else { _sortCol = fid; _sortDir = 1; }
+  const sorted = [..._recs].sort((a, b) => {
+    const va = a.data?.[fid] ?? '', vb = b.data?.[fid] ?? '';
+    return String(va).localeCompare(String(vb), undefined, { numeric: true }) * _sortDir;
+  });
+  const tb = $('tbl-body');
+  if (tb) tb.innerHTML = sorted.map(r => buildRow(r, _vf, _cmds, _sid)).join('');
+}
+
+function exportCSV() {
+  const sc = SCREENS.find(s => s.id === _sid);
+  const hdr = [..._vf.map(f => `"${f.name}"`), '"Registrado por"', '"Data/Hora"'].join(',');
+  const rows = _recs.map(r => [
+    ..._vf.map(f => `"${r.data?.[f.id] ?? ''}"`),
+    `"${r.createdBy?.name || ''}"`,
+    `"${r.createdAt?.toDate ? r.createdAt.toDate().toLocaleString('pt-BR') : ''}"`
+  ].join(','));
+  const blob = new Blob([[hdr, ...rows].join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (sc?.name || 'registros') + '.csv';
+  a.click();
+}
+
+function exportXLSX() {
+  const sc = SCREENS.find(s => s.id === _sid);
+  const data = [[..._vf.map(f => f.name), 'Registrado por', 'Data/Hora']];
+  _recs.forEach(r => data.push([
+    ..._vf.map(f => r.data?.[f.id] ?? ''),
+    r.createdBy?.name || '',
+    r.createdAt?.toDate ? r.createdAt.toDate().toLocaleString('pt-BR') : ''
+  ]));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(data), sc?.name || 'Sheet');
+  XLSX.writeFile(wb, (sc?.name || 'registros') + '.xlsx');
+}
+
+// ══════════════════════════════════════════════════════════
+// RECORD CRUD
+// ══════════════════════════════════════════════════════════
+async function submitRecord(sid, recId) {
+  const sc = SCREENS.find(s => s.id === sid);
+  if (!sc) return;
+  const fields = sc.fields || [];
+  const data = {};
+  let valid = true;
+
+  for (const f of fields) {
+    const el = $('ff-' + f.id);
+    if (!el) continue;
+    if (f.required && !el.value.trim()) {
+      el.style.borderColor = 'var(--err)';
+      valid = false;
+    } else {
+      el.style.borderColor = '';
+    }
+    data[f.id] = f.type === 'number' ? (parseFloat(el.value) || 0) : el.value;
+  }
+  if (!valid) return;
+
+  // unique check
+  for (const f of fields.filter(x => x.unique)) {
+    if (!data[f.id]) continue;
+    const snap = await db.collection('records')
+      .where('screenId','==',sid)
+      .where(`data.${f.id}`,'==',data[f.id]).get();
+    const conflict = snap.docs.find(d => d.id !== recId);
+    if (conflict) { alert(`O campo "${f.name}" exige valor único. "${data[f.id]}" já existe.`); return; }
+  }
+
+  const ts  = fsv.serverTimestamp();
+  const who = { uid: CU.uid, name: UP?.name || CU.email };
+  if (recId) {
+    await db.collection('records').doc(recId).update({ data, updatedAt: ts, updatedBy: who });
+    await addAudit('edit', sid, recId, `Registro editado em "${sc.name}"`);
+  } else {
+    const ref = await db.collection('records').add({ screenId: sid, data, createdAt: ts, createdBy: who });
+    await addAudit('create', sid, ref.id, `Novo registro em "${sc.name}"`);
+  }
+  closeModal();
+  goScreen(sid);
+}
+
+async function openEditRecord(recId, sid) {
+  if (!isMaster) return;
+  const snap = await db.collection('records').doc(recId).get();
+  if (!snap.exists) return;
+  const sc = SCREENS.find(s => s.id === sid);
+  const fields = (sc?.fields || []).slice().sort((a,b) => a.order - b.order);
+  const data = snap.data().data || {};
+
+  openModal(`<div class="modal modal-md">
+    <div class="mh"><div class="mh-title">✏ Editar registro</div><button class="mx-btn" onclick="closeModal()">✕</button></div>
+    <div class="mb">
+      ${fields.map(f => {
+        const v = data[f.id] ?? '';
+        const dis = !f.editable ? 'disabled style="opacity:.5"' : '';
+        let inp = '';
+        if (f.type === 'textarea') inp = `<textarea id="ff-${f.id}" ${dis}>${v}</textarea>`;
+        else if (f.type === 'select') {
+          const opts = (f.options||[]).map(o=>`<option ${v===o?'selected':''}>${o}</option>`).join('');
+          inp = `<select id="ff-${f.id}" ${dis}><option value="">—</option>${opts}</select>`;
+        }
+        else inp = `<input type="${f.type==='number'?'number':'text'}" id="ff-${f.id}" value="${v}" ${dis}>`;
+        return `<div class="fg"><label>${f.name}</label>${inp}${!f.editable?`<div class="field-hint">Não editável após registro</div>`:''}</div>`;
+      }).join('')}
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-p" onclick="submitRecord('${sid}','${recId}')">Salvar</button>
+    </div>
+  </div>`);
+}
+
+async function deleteRecord(recId, sid) {
+  if (!confirm('Excluir este registro? Esta ação não pode ser desfeita.')) return;
+  await db.collection('records').doc(recId).delete();
+  await addAudit('delete', sid, recId, `Registro excluído`);
+  goScreen(sid);
+}
+
+// ══════════════════════════════════════════════════════════
+// COMMANDS
+// ══════════════════════════════════════════════════════════
+async function execCmd(cmdId, recId, sid) {
+  const sc   = SCREENS.find(s => s.id === sid);
+  const cmd  = (sc?.commands || []).find(c => c.id === cmdId);
+  if (!cmd) return;
+  const snap = await db.collection('records').doc(recId).get();
+  const existing = snap.data();
+  const addFields = cmd.fields || [];
+
+  openModal(`<div class="modal modal-md">
+    <div class="mh"><div class="mh-title">${cmd.icon || '▶'} ${cmd.name}</div><button class="mx-btn" onclick="closeModal()">✕</button></div>
+    <div class="mb">
+      ${cmd.description ? `<p style="font-size:12px;color:var(--t2);margin-bottom:14px;line-height:1.6">${cmd.description}</p>` : ''}
+      ${addFields.map(f => `<div class="fg">
+        <label>${f.name}${f.required ? ' <span style="color:var(--err)">*</span>' : ''}</label>
+        <input type="text" id="cf-${f.id}" placeholder="${f.name}…">
+      </div>`).join('') || '<p style="font-size:12px;color:var(--t2)">Confirmar esta ação?</p>'}
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-p" onclick="confirmCmd('${cmdId}','${recId}','${sid}')">Confirmar</button>
+    </div>
+  </div>`);
+}
+
+async function confirmCmd(cmdId, recId, sid) {
+  const sc   = SCREENS.find(s => s.id === sid);
+  const cmd  = (sc?.commands || []).find(c => c.id === cmdId);
+  if (!cmd) return;
+
+  const addData = {};
+  (cmd.fields || []).forEach(f => { const el = $('cf-' + f.id); if (el) addData[f.id] = el.value; });
+
+  const snap = await db.collection('records').doc(recId).get();
+  const old  = snap.data();
+  const ts   = fsv.serverTimestamp();
+  const who  = { uid: CU.uid, name: UP?.name || CU.email };
+
+  if (cmd.targetScreen) {
+    const targetSc = SCREENS.find(s => s.id === cmd.targetScreen);
+    await db.collection('records').add({
+      screenId: cmd.targetScreen,
+      data: { ...(old.data || {}), ...addData },
+      createdAt: ts, createdBy: who,
+      origin: { screenId: sid, screenName: sc.name, command: cmd.name, movedAt: ts }
+    });
+    await db.collection('records').doc(recId).delete();
+    await addAudit('move', sid, recId, `Registro movido de "${sc.name}" → "${targetSc?.name || '?'}" via comando "${cmd.name}"`);
+  } else {
+    await db.collection('records').doc(recId).update({
+      data: { ...(old.data || {}), ...addData },
+      updatedAt: ts, updatedBy: who
+    });
+    await addAudit('command', sid, recId, `Comando "${cmd.name}" executado`);
+  }
+  closeModal();
+  goScreen(sid);
+}
+
+// ══════════════════════════════════════════════════════════
+// CHARTS
+// ══════════════════════════════════════════════════════════
+async function loadCharts(sid) {
+  const sc = SCREENS.find(s => s.id === sid);
+  const charts = sc?.charts || [];
+  const snap = await db.collection('records').where('screenId','==',sid).get();
+  const recs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+  const fields = sc?.fields || [];
+  const wrap = $('charts-wrap');
+  if (!wrap) return;
+
+  // remove existing chart cards, keep add button
+  wrap.querySelectorAll('.chart-card').forEach(el => el.remove());
+
+  charts.forEach((c, i) => {
+    const div = document.createElement('div');
+    div.className = 'card chart-card';
+    div.innerHTML = `
+      <div class="card-head">
+        <div class="card-title">${c.title}</div>
+        ${isMaster ? `<button class="btn btn-g btn-sm" onclick="openChartModal('${sid}',${i})">✏ Editar</button>` : ''}
+      </div>
+      <div class="card-body"><div class="chart-wrap"><canvas id="cv-${i}"></canvas></div></div>`;
+    wrap.appendChild(div);
+
+    setTimeout(() => {
+      const cvs = $('cv-' + i);
+      if (!cvs) return;
+      if (_charts['cv-' + i]) { _charts['cv-' + i].destroy(); }
+      const field = fields.find(f => f.id === c.field);
+      if (!field) return;
+      const counts = {};
+      recs.forEach(r => {
+        const v = r.data?.[c.field] || '(vazio)';
+        counts[v] = (counts[v] || 0) + (c.agg === 'sum' ? (parseFloat(r.data?.[c.valField]) || 0) : 1);
+      });
+      const COLORS = ['#4f6ef7','#20c464','#f5a623','#f04f4f','#22b8d4','#ec4899','#a855f7','#f97316'];
+      _charts['cv-' + i] = new Chart(cvs, {
+        type: c.type || 'bar',
+        data: {
+          labels: Object.keys(counts),
+          datasets: [{
+            label: c.title,
+            data: Object.values(counts),
+            backgroundColor: ['pie','doughnut'].includes(c.type) ? COLORS : COLORS[0],
+            borderColor: 'transparent', borderRadius: 5
+          }]
+        },
+        options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: '#7f849e', font: { size: 11, family: "'Sora'" } } } },
+          scales: ['pie','doughnut'].includes(c.type) ? {} : {
+            x: { ticks: { color: '#7f849e' }, grid: { color: '#252830' } },
+            y: { ticks: { color: '#7f849e' }, grid: { color: '#252830' } }
+          }
+        }
+      });
+    }, 80);
+  });
+}
+
+function openChartModal(sid, idx) {
+  if (!isMaster) return;
+  const sc = SCREENS.find(s => s.id === sid);
+  const ex = idx !== null ? (sc?.charts || [])[idx] : null;
+  const fields = sc?.fields || [];
+  const fOpts = fields.map(f => `<option value="${f.id}" ${ex?.field===f.id?'selected':''}>${f.name}</option>`).join('');
+  const vOpts = fields.filter(f => f.type === 'number').map(f => `<option value="${f.id}" ${ex?.valField===f.id?'selected':''}>${f.name}</option>`).join('');
+
+  openModal(`<div class="modal modal-md">
+    <div class="mh"><div class="mh-title">${ex ? 'Editar' : 'Novo'} gráfico</div><button class="mx-btn" onclick="closeModal()">✕</button></div>
+    <div class="mb">
+      <div class="fg"><label>Título</label><input id="ct-title" value="${ex?.title || ''}"></div>
+      <div class="row2">
+        <div class="fg"><label>Tipo</label>
+          <select id="ct-type">${['bar','line','pie','doughnut'].map(t=>`<option value="${t}" ${ex?.type===t?'selected':''}>${t}</option>`).join('')}</select>
+        </div>
+        <div class="fg"><label>Campo eixo / agrupamento</label>
+          <select id="ct-field"><option value="">—</option>${fOpts}</select>
+        </div>
+      </div>
+      <div class="row2">
+        <div class="fg"><label>Agrupamento</label>
+          <select id="ct-agg">
+            <option value="count" ${(!ex||ex.agg==='count')?'selected':''}>Contagem</option>
+            <option value="sum" ${ex?.agg==='sum'?'selected':''}>Soma</option>
+          </select>
+        </div>
+        <div class="fg"><label>Campo de valor (para soma)</label>
+          <select id="ct-val"><option value="">—</option>${vOpts}</select>
+        </div>
+      </div>
+    </div>
+    <div class="mf">
+      ${idx !== null ? `<button class="btn btn-d" onclick="deleteChart('${sid}',${idx})">Excluir</button>` : ''}
+      <button class="btn btn-s" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-p" onclick="saveChart('${sid}',${idx})">Salvar</button>
+    </div>
+  </div>`);
+}
+
+async function saveChart(sid, idx) {
+  const chart = { title: val('ct-title'), type: val('ct-type'), field: val('ct-field'), agg: val('ct-agg'), valField: val('ct-val') };
+  const sc = SCREENS.find(s => s.id === sid);
+  const charts = [...(sc?.charts || [])];
+  if (idx !== null) charts[idx] = chart; else charts.push(chart);
+  await db.collection('screens').doc(sid).update({ charts });
+  closeModal(); await loadScreens(); goScreen(sid);
+}
+
+async function deleteChart(sid, idx) {
+  if (!confirm('Excluir este gráfico?')) return;
+  const sc = SCREENS.find(s => s.id === sid);
+  const charts = [...(sc?.charts || [])];
+  charts.splice(idx, 1);
+  await db.collection('screens').doc(sid).update({ charts });
+  closeModal(); await loadScreens(); goScreen(sid);
+}
+
+// ══════════════════════════════════════════════════════════
+// SCREEN CONFIG (MASTER ONLY)
+// ══════════════════════════════════════════════════════════
+function openScreenCfg(sid) {
+  if (!isMaster) return;
+  const sc = SCREENS.find(s => s.id === sid);
+  if (!sc) return;
+
+  openModal(`<div class="modal modal-xl">
+    <div class="mh"><div class="mh-title">⚙ Configurar — ${sc.name}</div><button class="mx-btn" onclick="closeModal()">✕</button></div>
+    <div class="mb">
+      <div class="tab-row" style="margin-bottom:14px">
+        <button class="tab-btn on" onclick="switchTab(this,'tc-fields')">Campos</button>
+        <button class="tab-btn" onclick="switchTab(this,'tc-cmds')">Comandos</button>
+        <button class="tab-btn" onclick="switchTab(this,'tc-general')">Geral</button>
+      </div>
+      <div id="tc-fields"  class="tab-pane on">${renderFieldsCfg(sc)}</div>
+      <div id="tc-cmds"    class="tab-pane">${renderCmdsCfg(sc)}</div>
+      <div id="tc-general" class="tab-pane">${renderGeneralCfg(sc)}</div>
+    </div>
+    <div class="mf"><button class="btn btn-s" onclick="closeModal()">Fechar</button></div>
+  </div>`);
+}
+
+function renderFieldsCfg(sc) {
+  const fields = (sc.fields || []).slice().sort((a,b) => a.order - b.order);
+  return `<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+    <button class="btn btn-p btn-sm" onclick="openFieldModal('${sc.id}',null)">+ Novo campo</button>
+  </div>
+  <div id="fields-list">
+    ${fields.map(f => `<div class="fl-item">
+      <span style="cursor:grab;color:var(--t3)">⠿</span>
+      <div class="fl-info">
+        <div class="fl-name">${f.name}</div>
+        <div class="fl-tags">
+          <span class="fl-tag">${f.type}</span>
+          ${f.required ? '<span class="fl-tag" style="color:var(--err)">obrigatório</span>' : ''}
+          ${f.unique   ? '<span class="fl-tag">único</span>' : ''}
+          ${f.editable === false ? '<span class="fl-tag">não editável</span>' : ''}
+          ${f.showInTable === false ? '<span class="fl-tag">oculto na tabela</span>' : ''}
+        </div>
+      </div>
+      <button class="btn btn-g btn-sm" onclick="openFieldModal('${sc.id}','${f.id}')">✏</button>
+      <button class="btn btn-d btn-sm" onclick="deleteField('${sc.id}','${f.id}')">🗑</button>
+    </div>`).join('')}
+    ${!fields.length ? '<div class="empty-state" style="padding:16px"><p style="font-size:12px">Nenhum campo. Clique em "+ Novo campo".</p></div>' : ''}
+  </div>`;
+}
+
+function renderCmdsCfg(sc) {
+  const cmds = sc.commands || [];
+  return `<div style="display:flex;justify-content:flex-end;margin-bottom:10px">
+    <button class="btn btn-p btn-sm" onclick="openCmdModal('${sc.id}',null)">+ Novo comando</button>
+  </div>
+  ${cmds.map(c => `<div class="fl-item">
+    <span style="font-size:20px">${c.icon || '▶'}</span>
+    <div class="fl-info">
+      <div class="fl-name">${c.name}</div>
+      <div class="fl-tags">
+        ${c.targetScreen ? `<span class="fl-tag">→ ${SCREENS.find(s=>s.id===c.targetScreen)?.name || '?'}</span>` : '<span class="fl-tag">sem movimentação</span>'}
+        <span class="fl-tag">${(c.fields||[]).length} campo(s) adicional(is)</span>
+      </div>
+    </div>
+    <button class="btn btn-g btn-sm" onclick="openCmdModal('${sc.id}','${c.id}')">✏</button>
+    <button class="btn btn-d btn-sm" onclick="deleteCmd('${sc.id}','${c.id}')">🗑</button>
+  </div>`).join('')}
+  ${!cmds.length ? '<div class="empty-state" style="padding:16px"><p style="font-size:12px">Nenhum comando configurado ainda.</p></div>' : ''}`;
+}
+
+function renderGeneralCfg(sc) {
+  return `<div class="fg"><label>Nome da tela</label><input id="gc-name" value="${sc.name}"></div>
+  <div class="row2">
+    <div class="fg"><label>Ícone (emoji)</label><input id="gc-icon" value="${sc.icon || '📋'}" style="font-size:18px"></div>
+    <div class="fg"><label>Ordem na sidebar</label><input type="number" id="gc-order" value="${sc.order || 0}"></div>
+  </div>
+  <div style="display:flex;gap:8px;margin-top:4px">
+    <button class="btn btn-p" onclick="saveScreenGeneral('${sc.id}')">Salvar</button>
+    <button class="btn btn-d" onclick="deleteScreen('${sc.id}')">Excluir esta tela</button>
+  </div>`;
+}
+
+async function saveScreenGeneral(sid) {
+  await db.collection('screens').doc(sid).update({
+    name: val('gc-name'), icon: val('gc-icon'), order: parseInt(val('gc-order')) || 0
+  });
+  closeModal(); await loadScreens(); goScreen(sid);
+}
+
+async function deleteScreen(sid) {
+  if (!confirm('Excluir esta tela e TODOS os seus registros? Irreversível.')) return;
+  const snap = await db.collection('records').where('screenId','==',sid).get();
+  const batch = db.batch();
+  snap.docs.forEach(d => batch.delete(d.ref));
+  batch.delete(db.collection('screens').doc(sid));
+  await batch.commit();
+  closeModal(); await loadScreens(); goHome();
+}
+
+// ══════════════════════════════════════════════════════════
+// FIELD MODAL
+// ══════════════════════════════════════════════════════════
+function openFieldModal(sid, fid) {
+  if (!isMaster) return;
+  const sc = SCREENS.find(s => s.id === sid);
+  const ex = fid ? (sc?.fields || []).find(f => f.id === fid) : null;
+  const sOpts = SCREENS.filter(s => s.id !== sid).map(s =>
+    `<option value="${s.id}" ${ex?.linkedScreen===s.id?'selected':''}>${s.name}</option>`
+  ).join('');
+
+  openModal(`<div class="modal modal-lg">
+    <div class="mh"><div class="mh-title">${ex ? 'Editar' : 'Novo'} campo</div><button class="mx-btn" onclick="closeModal()">✕</button></div>
+    <div class="mb">
+      <div class="row2">
+        <div class="fg"><label>Nome do campo</label><input id="fn-name" value="${ex?.name || ''}" placeholder="Ex: Código do produto"></div>
+        <div class="fg"><label>Tipo de dado</label>
+          <select id="fn-type" onchange="toggleFieldType()">
+            <option value="text"     ${ex?.type==='text'    ?'selected':''}>Texto</option>
+            <option value="number"   ${ex?.type==='number'  ?'selected':''}>Número</option>
+            <option value="date"     ${ex?.type==='date'    ?'selected':''}>Data</option>
+            <option value="textarea" ${ex?.type==='textarea'?'selected':''}>Texto longo</option>
+            <option value="select"   ${ex?.type==='select'  ?'selected':''}>Seleção (lista)</option>
+            <option value="linked"   ${ex?.type==='linked'  ?'selected':''}>Vinculado a tela</option>
+          </select>
+        </div>
+      </div>
+      <div id="fn-opts-wrap" style="${ex?.type==='select'?'':'display:none'}">
+        <div class="fg"><label>Opções (uma por linha)</label>
+          <textarea id="fn-opts" placeholder="Opção A\nOpção B\nOpção C">${(ex?.options||[]).join('\n')}</textarea>
+        </div>
+      </div>
+      <div id="fn-link-wrap" style="${ex?.type==='linked'?'':'display:none'}">
+        <div class="fg"><label>Tela vinculada</label>
+          <select id="fn-link"><option value="">Selecionar tela…</option>${sOpts}</select>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px">
+        <label class="check-item"><input type="checkbox" id="fn-req"  ${ex?.required?'checked':''}>       <span>Obrigatório</span></label>
+        <label class="check-item"><input type="checkbox" id="fn-edit" ${ex?.editable!==false?'checked':''}><span>Editável após registro</span></label>
+        <label class="check-item"><input type="checkbox" id="fn-uniq" ${ex?.unique?'checked':''}>          <span>Valor único</span></label>
+        <label class="check-item"><input type="checkbox" id="fn-show" ${ex?.showInTable!==false?'checked':''}><span>Exibir na tabela</span></label>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-p" onclick="saveField('${sid}','${fid||''}')">Salvar campo</button>
+    </div>
+  </div>`);
+}
+
+function toggleFieldType() {
+  const t = val('fn-type');
+  $('fn-opts-wrap').style.display = t === 'select' ? 'block' : 'none';
+  $('fn-link-wrap').style.display = t === 'linked' ? 'block' : 'none';
+}
+
+async function saveField(sid, fid) {
+  const name = val('fn-name').trim();
+  if (!name) return;
+  const field = {
+    id: fid || 'f' + Date.now(),
+    name, type: val('fn-type'),
+    required: $('fn-req').checked,
+    editable: $('fn-edit').checked,
+    unique:   $('fn-uniq').checked,
+    showInTable: $('fn-show').checked,
+    order: fid
+      ? (SCREENS.find(s=>s.id===sid)?.fields?.find(f=>f.id===fid)?.order ?? 0)
+      : (SCREENS.find(s=>s.id===sid)?.fields || []).length
+  };
+  if (field.type === 'select') field.options = val('fn-opts').split('\n').map(s=>s.trim()).filter(Boolean);
+  if (field.type === 'linked') field.linkedScreen = val('fn-link');
+
+  const sc = SCREENS.find(s => s.id === sid);
+  let fields = [...(sc?.fields || [])];
+  const idx = fields.findIndex(f => f.id === fid);
+  if (idx >= 0) fields[idx] = field; else fields.push(field);
+  await db.collection('screens').doc(sid).update({ fields });
+  closeModal(); await loadScreens(); openScreenCfg(sid);
+}
+
+async function deleteField(sid, fid) {
+  if (!confirm('Remover este campo? Os dados existentes não serão apagados.')) return;
+  const sc = SCREENS.find(s => s.id === sid);
+  const fields = (sc?.fields || []).filter(f => f.id !== fid);
+  await db.collection('screens').doc(sid).update({ fields });
+  closeModal(); await loadScreens(); openScreenCfg(sid);
+}
+
+// ══════════════════════════════════════════════════════════
+// COMMAND MODAL
+// ══════════════════════════════════════════════════════════
+let _caf = []; // cmd additional fields
+
+function openCmdModal(sid, cid) {
+  if (!isMaster) return;
+  const sc  = SCREENS.find(s => s.id === sid);
+  const ex  = cid ? (sc?.commands || []).find(c => c.id === cid) : null;
+  const sOpts = SCREENS.map(s => `<option value="${s.id}" ${ex?.targetScreen===s.id?'selected':''}>${s.name}</option>`).join('');
+  _caf = (ex?.fields || []).map(f => ({...f}));
+
+  openModal(`<div class="modal modal-lg">
+    <div class="mh"><div class="mh-title">${ex ? 'Editar' : 'Novo'} comando</div><button class="mx-btn" onclick="closeModal()">✕</button></div>
+    <div class="mb">
+      <div class="row2">
+        <div class="fg"><label>Nome do comando</label><input id="cm-name" value="${ex?.name||''}" placeholder="Ex: Enviar para conferência"></div>
+        <div class="fg"><label>Ícone (emoji)</label><input id="cm-icon" value="${ex?.icon||'▶'}"></div>
+      </div>
+      <div class="fg"><label>Descrição (exibida no formulário)</label><input id="cm-desc" value="${ex?.description||''}" placeholder="Opcional"></div>
+      <div class="fg"><label>Mover registro para tela</label>
+        <select id="cm-target"><option value="">Não mover (apenas atualizar)</option>${sOpts}</select>
+      </div>
+      <div class="sep"></div>
+      <div class="sec-lbl">Campos adicionais coletados por este comando</div>
+      <div id="caf-list">${_caf.map((f,i) => cafRowHtml(f,i)).join('')}</div>
+      <button class="btn btn-s btn-sm" style="margin-top:6px" onclick="addCaf()">+ Adicionar campo</button>
+    </div>
+    <div class="mf">
+      ${cid ? `<button class="btn btn-d" onclick="deleteCmd('${sid}','${cid}')">Excluir comando</button>` : ''}
+      <button class="btn btn-s" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-p" onclick="saveCmd('${sid}','${cid||''}')">Salvar</button>
+    </div>
+  </div>`);
+}
+
+function cafRowHtml(f, i) {
+  return `<div class="fl-item" id="caf-${i}">
+    <div style="flex:1"><input type="text" value="${f.name}" style="background:var(--bg3)" onchange="_caf[${i}]&&(_caf[${i}].name=this.value)"></div>
+    <select style="background:var(--bg3);border:1px solid var(--bdr);border-radius:var(--r);padding:7px 9px;color:var(--t1);font-size:12px;font-family:var(--font)" onchange="_caf[${i}]&&(_caf[${i}].type=this.value)">
+      ${['text','number','date','select'].map(t => `<option value="${t}" ${f.type===t?'selected':''}>${t}</option>`).join('')}
+    </select>
+    <button class="btn btn-d btn-sm" onclick="removeCaf(${i})">🗑</button>
+  </div>`;
+}
+
+function addCaf() {
+  const i = _caf.length;
+  _caf.push({ id: 'cf' + Date.now(), name: 'Campo ' + (i + 1), type: 'text', required: false });
+  const list = $('caf-list');
+  const tmp = document.createElement('div');
+  tmp.innerHTML = cafRowHtml(_caf[i], i);
+  list.appendChild(tmp.firstChild);
+}
+
+function removeCaf(i) {
+  const el = $('caf-' + i);
+  if (el) el.remove();
+  _caf[i] = null;
+}
+
+async function saveCmd(sid, cid) {
+  const name = val('cm-name').trim();
+  if (!name) return;
+  const cmd = {
+    id: cid || 'cmd' + Date.now(),
+    name, icon: val('cm-icon') || '▶',
+    description: val('cm-desc'),
+    targetScreen: val('cm-target'),
+    fields: _caf.filter(Boolean)
+  };
+  const sc = SCREENS.find(s => s.id === sid);
+  let cmds = [...(sc?.commands || [])];
+  const idx = cmds.findIndex(c => c.id === cid);
+  if (idx >= 0) cmds[idx] = cmd; else cmds.push(cmd);
+  await db.collection('screens').doc(sid).update({ commands: cmds });
+  closeModal(); await loadScreens(); openScreenCfg(sid);
+}
+
+async function deleteCmd(sid, cid) {
+  if (!confirm('Excluir este comando?')) return;
+  const sc = SCREENS.find(s => s.id === sid);
+  const cmds = (sc?.commands || []).filter(c => c.id !== cid);
+  await db.collection('screens').doc(sid).update({ commands: cmds });
+  closeModal(); await loadScreens(); openScreenCfg(sid);
+}
+
+// ══════════════════════════════════════════════════════════
+// MANAGE SCREENS
+// ══════════════════════════════════════════════════════════
+function goManage() {
+  if (!isMaster) return;
+  setActive('mscreens');
+  setTitle('Gerenciar Telas');
+  $('tb-actions').innerHTML = `<button class="btn btn-p btn-sm" onclick="openCreateScreen()">+ Nova tela</button>
+    <button class="btn btn-warn btn-sm" onclick="exitMaster()">🔓 Sair Master</button>`;
+  $('page').innerHTML = `<div class="sc-grid">
+    ${SCREENS.map(s => `<div class="sc-card">
+      <div class="sc-card-ico">${s.icon || '📋'}</div>
+      <div class="sc-card-name">${s.name}</div>
+      <div class="sc-card-meta">${(s.fields||[]).length} campos · ${(s.commands||[]).length} comandos · ${(s.charts||[]).length} gráficos</div>
+      <div style="display:flex;gap:7px;margin-top:10px">
+        <button class="btn btn-s btn-sm" onclick="goScreen('${s.id}')">Ver registros</button>
+        <button class="btn btn-s btn-sm" onclick="openScreenCfg('${s.id}')">⚙ Config</button>
+      </div>
+    </div>`).join('')}
+    <div class="sc-card sc-card-add" onclick="openCreateScreen()">
+      <span style="font-size:22px">+</span>
+      <span style="font-size:11px">Nova tela</span>
+    </div>
+  </div>`;
+}
+
+function openCreateScreen() {
+  if (!isMaster) return;
+  openModal(`<div class="modal modal-sm">
+    <div class="mh"><div class="mh-title">Nova tela</div><button class="mx-btn" onclick="closeModal()">✕</button></div>
+    <div class="mb">
+      <div class="fg"><label>Nome</label><input id="ns-name" placeholder="Ex: Conferência, Expedição…" onkeydown="if(event.key==='Enter')createScreen()"></div>
+      <div class="row2">
+        <div class="fg"><label>Ícone (emoji)</label><input id="ns-icon" value="📋" style="font-size:18px"></div>
+        <div class="fg"><label>Posição (ordem)</label><input type="number" id="ns-order" value="${SCREENS.length}"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn btn-s" onclick="closeModal()">Cancelar</button>
+      <button class="btn btn-p" onclick="createScreen()">Criar tela</button>
+    </div>
+  </div>`);
+}
+
+async function createScreen() {
+  const name = val('ns-name').trim();
+  if (!name) return;
+  await db.collection('screens').doc().set({
+    name, icon: val('ns-icon') || '📋',
+    order: parseInt(val('ns-order')) || SCREENS.length,
+    fields: [], commands: [], charts: [],
+    createdAt: fsv.serverTimestamp()
+  });
+  closeModal(); await loadScreens(); goManage();
+}
+
+// ══════════════════════════════════════════════════════════
+// USERS (MASTER ONLY)
+// ══════════════════════════════════════════════════════════
+async function goUsers() {
+  if (!isMaster) return;
+  setActive('users');
+  setTitle('Usuários');
+  $('tb-actions').innerHTML = `<button class="btn btn-warn btn-sm" onclick="exitMaster()">🔓 Sair Master</button>`;
+  $('page').innerHTML = `<div class="loading"><div class="spin"></div> Carregando…</div>`;
+
+  const snap = await db.collection('users').orderBy('createdAt', 'desc').get();
+  const users = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+  const AVCOLORS = ['#4f6ef7','#20c464','#f5a623','#f04f4f','#22b8d4','#ec4899','#a855f7'];
+
+  $('page').innerHTML = `
+    <p style="font-size:12px;color:var(--t2);margin-bottom:16px;line-height:1.7">
+      Gerencie acesso, perfil e status dos usuários. Apenas o <strong>Master Admin</strong> pode alterar perfis e ativar/desativar contas.
+    </p>
+    ${users.map((u, i) => {
+      const ini = (u.name || u.email || '?').trim().split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+      const col = AVCOLORS[i % AVCOLORS.length];
+      const isMe = u.id === CU.uid;
+      return `<div class="user-row">
+        <div class="user-row-av" style="background:${col}18;color:${col};border:1px solid ${col}30">${ini}</div>
+        <div class="user-row-info">
+          <div class="user-row-name">${u.name || '—'} ${isMe ? '<span class="badge b-acc">você</span>' : ''}</div>
+          <div class="user-row-email">${u.email || '—'}</div>
+        </div>
+        <span class="badge ${u.role==='admin'?'b-acc':'b-dim'}" style="flex-shrink:0">${u.role === 'admin' ? 'Admin' : 'Usuário'}</span>
+        ${!isMe ? `
+          <div style="display:flex;align-items:center;gap:6px;margin-left:6px">
+            <label class="toggle">
+              <input type="checkbox" ${u.role === 'admin' ? 'checked' : ''} onchange="setUserRole('${u.id}',this.checked)">
+              <div class="toggle-track"></div>
+            </label>
+            <span class="toggle-lbl">Admin</span>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;margin-left:8px">
+            <label class="toggle">
+              <input type="checkbox" ${u.active !== false ? 'checked' : ''} onchange="setUserActive('${u.id}',this.checked)">
+              <div class="toggle-track"></div>
+            </label>
+            <span class="toggle-lbl">Ativo</span>
+          </div>
+        ` : '<span style="font-size:10px;color:var(--t3);margin-left:6px">sua conta</span>'}
+      </div>`;
+    }).join('')}`;
+}
+
+async function setUserRole(uid, isAdm) {
+  await db.collection('users').doc(uid).update({ role: isAdm ? 'admin' : 'user' });
+  await addAudit('user-role', null, uid, `Perfil alterado para ${isAdm ? 'admin' : 'usuário'}`);
+}
+
+async function setUserActive(uid, active) {
+  await db.collection('users').doc(uid).update({ active });
+  await addAudit('user-active', null, uid, `Conta ${active ? 'ativada' : 'desativada'}`);
+}
+
+// ══════════════════════════════════════════════════════════
+// AUDIT
+// ══════════════════════════════════════════════════════════
+async function goAudit() {
+  if (!isMaster && !isAdmin) return;
+  setActive('audit');
+  setTitle('Auditoria');
+  $('tb-actions').innerHTML = isMaster ? `<button class="btn btn-warn btn-sm" onclick="exitMaster()">🔓 Sair Master</button>` : `<button class="btn btn-s btn-sm" onclick="openMaster()">🔐 Modo Master</button>`;
+  $('page').innerHTML = `<div class="loading"><div class="spin"></div> Carregando…</div>`;
+
+  const snap = await db.collection('audit').orderBy('at', 'desc').limit(200).get();
+  const logs = snap.docs.map(d => d.data());
+
+  $('page').innerHTML = `<div class="card">
+    <div class="card-head"><div class="card-title">📋 Últimas 200 ações registradas</div></div>
+    <div class="card-body">
+      ${!logs.length
+        ? '<div class="empty-state"><div class="empty-icon">📭</div><p style="font-size:12px">Nenhum log ainda</p></div>'
+        : logs.map(l => `<div class="audit-row">
+          <div class="audit-dot"></div>
+          <div>
+            <div class="audit-text">${l.action}</div>
+            <div class="audit-meta">Por <strong>${l.user?.name || '—'}</strong> · ${l.at?.toDate ? l.at.toDate().toLocaleString('pt-BR') : '—'}</div>
+          </div>
+        </div>`).join('')}
+    </div>
+  </div>`;
+}
+
+async function addAudit(type, sid, rid, action) {
+  try {
+    await db.collection('audit').add({
+      type, screenId: sid, recordId: rid, action,
+      user: { uid: CU.uid, name: UP?.name || CU.email },
+      at: fsv.serverTimestamp()
+    });
+  } catch(_) {}
+}
+
+// ══════════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════════
+const $ = id => document.getElementById(id);
+const val = id => ($( id)?.value || '');
+
+function setTitle(t)   { $('tb-title').textContent = t; }
+function setActive(key) {
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
+  const el = $('ni-' + key) || $('ni-s-' + key.replace('s-',''));
+  if (el) el.classList.add('on');
+}
+
+function showMsg(el, txt, type) {
+  el.textContent = txt;
+  el.className = 'msg msg-' + (type === 'ok' ? 'ok' : 'err');
+  el.style.display = 'block';
+}
+function hideMsg(el) { el.style.display = 'none'; }
+
+function openModal(html) {
+  $('modal-root').innerHTML = `<div class="overlay" onclick="if(event.target===this)closeModal()">${html}</div>`;
+}
+function closeModal() { $('modal-root').innerHTML = ''; }
+
+function switchTab(btn, targetId) {
+  const scope = btn.closest('.mb') || $('page');
+  btn.closest('.tab-row').querySelectorAll('.tab-btn').forEach(b => b.classList.remove('on'));
+  btn.classList.add('on');
+  scope.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('on'));
+  const t = $(targetId); if (t) t.classList.add('on');
+}
+</script>
+</body>
+</html>
