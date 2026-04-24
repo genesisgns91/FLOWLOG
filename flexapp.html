@@ -1,0 +1,1254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>FlexApp</title>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── NORMAL THEME ── */
+:root{
+  --bg:#f7f6f2;--bg2:#fff;--bg3:#f0efe9;--bg4:#e8e7df;
+  --br:rgba(0,0,0,.1);--br2:rgba(0,0,0,.18);
+  --t1:#1a1a18;--t2:#55554f;--t3:#888880;
+  --a:#2d5be3;--abg:#e8eefb;--at:#1a3a9f;
+  --ok:#1d9e75;--okbg:#e1f5ee;
+  --warn:#ba7517;--warnbg:#faeeda;
+  --err:#a32d2d;--errbg:#fcebeb;
+  --pu:#534ab7;--pubg:#eeedfe;--put:#3c3489;
+  --r:10px;--rl:14px;
+  --sw:220px;
+  --font:'Inter',system-ui,sans-serif;--mono:'JetBrains Mono',monospace;
+}
+/* ── MASTER THEME (lighter / bluish) ── */
+:root.master{
+  --bg:#f0f2ff;--bg2:#fafbff;--bg3:#e8ecff;--bg4:#dde3ff;
+  --br:rgba(45,91,227,.12);--br2:rgba(45,91,227,.22);
+  --t1:#0d1533;--t2:#3a4466;--t3:#7780a8;
+  --a:#2d5be3;--abg:#dde5ff;--at:#1a3a9f;
+  --pu:#534ab7;--pubg:#eeedfe;--put:#3c3489;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:var(--font);font-size:14px;line-height:1.5;background:var(--bg);color:var(--t1);-webkit-font-smoothing:antialiased;transition:background .4s,color .3s}
+
+/* ── AUTH ── */
+#pg-auth{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg)}
+.auth-card{width:350px;background:var(--bg2);border:1px solid var(--br2);border-radius:var(--rl);padding:32px;box-shadow:0 8px 40px rgba(0,0,0,.08)}
+.auth-brand{display:flex;align-items:center;gap:10px;margin-bottom:26px}
+.auth-ico{width:34px;height:34px;background:var(--a);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;letter-spacing:-1px}
+.auth-brand h1{font-size:18px;font-weight:600;letter-spacing:-.3px}
+.auth-brand p{font-size:11px;color:var(--t3)}
+.seg{display:flex;background:var(--bg3);border-radius:8px;padding:3px;gap:2px;margin-bottom:18px}
+.seg-b{flex:1;text-align:center;padding:6px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:500;color:var(--t3);transition:all .15s;user-select:none}
+.seg-b.on{background:var(--bg2);color:var(--t1);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.fg{margin-bottom:12px}
+.fg label{display:block;font-size:11px;font-weight:500;color:var(--t2);margin-bottom:4px;letter-spacing:.1px}
+input,select,textarea{width:100%;background:var(--bg3);border:1px solid var(--br2);border-radius:8px;padding:8px 11px;color:var(--t1);font-family:var(--font);font-size:13px;outline:none;transition:border .15s;-webkit-appearance:none;appearance:none}
+input:focus,select:focus,textarea:focus{border-color:var(--a);background:var(--bg2)}
+input::placeholder,textarea::placeholder{color:var(--t3)}
+select option{background:var(--bg2)}
+textarea{resize:vertical;min-height:72px}
+.errtxt{font-size:11px;color:var(--err);margin-top:5px;display:none}
+.oktxt{font-size:11px;color:var(--ok);margin-top:5px;display:none}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 14px;border-radius:8px;border:1px solid var(--br2);background:var(--bg3);color:var(--t1);cursor:pointer;font-family:var(--font);font-size:12px;font-weight:500;transition:all .15s;white-space:nowrap;flex-shrink:0}
+.btn:hover{background:var(--bg4)}
+.btn-p{background:var(--a);color:#fff;border-color:var(--a)}.btn-p:hover{opacity:.9;background:var(--a)}
+.btn-d{color:var(--err);border-color:var(--errbg)}.btn-d:hover{background:var(--errbg)}
+.btn-g{background:transparent;border-color:transparent;color:var(--t2)}.btn-g:hover{background:var(--bg3);color:var(--t1)}
+.btn-pu{background:var(--pubg);color:var(--put);border-color:var(--pu)}.btn-pu:hover{opacity:.9}
+.btn-warn{background:var(--warnbg);color:var(--warn);border-color:var(--warn)}
+.sm{padding:4px 10px;font-size:11px}
+.full{width:100%;justify-content:center}
+
+/* ── LAYOUT ── */
+#pg-app{display:none}
+.shell{display:flex;min-height:100vh}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--bg2);border-bottom:1px solid var(--br);padding:0 16px;height:48px;display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:200;transition:background .4s,border-color .4s}
+.t-logo{font-weight:600;font-size:15px;letter-spacing:-.3px;flex-shrink:0}
+.t-logo span{color:var(--a)}
+.t-tabs{display:flex;gap:2px;flex:1;justify-content:center}
+.ttab{padding:5px 12px;border-radius:7px;border:none;background:transparent;color:var(--t2);cursor:pointer;font-size:12px;font-weight:500;transition:all .15s;font-family:var(--font)}
+.ttab:hover{background:var(--bg3);color:var(--t1)}
+.ttab.on{background:var(--abg);color:var(--at)}
+.ttab.hidden{display:none}
+.t-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.rbadge{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:600}
+.rb-master{background:var(--pubg);color:var(--put)}
+.rb-adm{background:var(--abg);color:var(--at)}
+.rb-op{background:var(--okbg);color:var(--ok)}
+.rb-view{background:var(--bg3);color:var(--t2)}
+.rb-blocked{background:var(--errbg);color:var(--err)}
+.mbtn{padding:4px 12px;border-radius:7px;border:1px solid var(--br2);background:var(--bg3);color:var(--t2);cursor:pointer;font-size:11px;font-weight:600;transition:all .15s;letter-spacing:.3px;font-family:var(--font)}
+.mbtn.on{background:var(--pubg);color:var(--put);border-color:var(--pu)}
+
+/* ── PAGE ── */
+.pg{padding:18px;flex:1;min-height:0}
+.panel{display:none}.panel.on{display:block}
+
+/* ── CARD ── */
+.card{background:var(--bg2);border:1px solid var(--br);border-radius:var(--rl);padding:16px;margin-bottom:12px}
+.c-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px;flex-wrap:wrap}
+.c-title{font-weight:600;font-size:13px}
+.c-sub{font-size:11px;color:var(--t3);margin-top:2px}
+
+/* ── STATS ── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
+.stat{background:var(--bg2);border:1px solid var(--br);border-radius:var(--rl);padding:14px 16px;text-align:center}
+.stat-v{font-size:24px;font-weight:600;font-family:var(--mono);letter-spacing:-1px}
+.stat-l{font-size:10px;color:var(--t3);margin-top:2px;text-transform:uppercase;letter-spacing:.4px}
+
+/* ── SCREEN LIST ── */
+.sc-list{display:flex;flex-direction:column;gap:6px}
+.sc-item{display:flex;align-items:center;gap:10px;padding:10px 13px;background:var(--bg3);border-radius:var(--r);cursor:pointer;transition:all .15s;border:1px solid transparent}
+.sc-item:hover{border-color:var(--br2)}
+.sc-item.sel{border-color:var(--a);background:var(--abg)}
+.sc-typ{font-size:10px;font-weight:600;padding:2px 7px;border-radius:5px;flex-shrink:0}
+.t-cadastro{background:#e1f5ee;color:#0f6e56}
+.t-formulario{background:var(--abg);color:var(--at)}
+.t-tabela{background:var(--pubg);color:var(--put)}
+.sc-name{font-size:13px;font-weight:500;flex:1}
+.sc-acts{display:flex;gap:4px;opacity:0;transition:.15s}
+.sc-item:hover .sc-acts{opacity:1}
+
+/* ── FIELD LIST ── */
+.fl-list{display:flex;flex-direction:column;gap:5px;margin-top:8px}
+.fl-item{display:flex;align-items:center;gap:8px;padding:8px 11px;background:var(--bg3);border-radius:8px;border:1px solid var(--br)}
+.fl-name{font-size:12px;font-weight:500;flex:1}
+.fl-type{font-size:10px;font-weight:600;padding:2px 6px;border-radius:4px;background:var(--warnbg);color:var(--warn)}
+.fl-link{font-size:10px;color:var(--a)}
+.fl-req{font-size:9px;color:var(--err);font-weight:600}
+
+/* ── TABLE ── */
+.tbl-w{overflow:auto;border-radius:var(--r);border:1px solid var(--br);margin-top:2px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{padding:8px 12px;text-align:left;font-size:10px;font-weight:600;color:var(--t3);border-bottom:1px solid var(--br);background:var(--bg3);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap;cursor:pointer;user-select:none}
+thead th:hover{color:var(--t1)}
+tbody td{padding:8px 12px;border-bottom:1px solid var(--br);color:var(--t2);max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;vertical-align:middle}
+tbody td.main-col{color:var(--t1);font-weight:500}
+tbody tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--bg3)}
+.empt{text-align:center;padding:32px;color:var(--t3);font-size:12px}
+
+/* ── TOOLBAR ── */
+.tbar{display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.srch{position:relative;flex:1;min-width:160px}
+.srch input{padding-left:28px;font-size:12px}
+.srch-ic{position:absolute;left:9px;top:50%;transform:translateY(-50%);color:var(--t3);pointer-events:none;font-size:11px}
+
+/* ── GRID ── */
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.g3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+
+/* ── USERS ── */
+.u-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--br);transition:.15s;flex-wrap:wrap}
+.u-row:hover{background:var(--bg3)}
+.u-row:last-child{border-bottom:none}
+.av{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.u-info{flex:1;min-width:100px}
+.u-nm{font-size:13px;font-weight:500}
+.u-em{font-size:10px;color:var(--t3)}
+
+/* ── MODAL ── */
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:1000;display:none;align-items:center;justify-content:center;padding:16px}
+.ov.open{display:flex}
+.modal{background:var(--bg2);border-radius:var(--rl);border:1px solid var(--br);padding:20px;width:100%;max-width:400px;max-height:88vh;overflow-y:auto;animation:mIn .16s ease;box-shadow:0 16px 60px rgba(0,0,0,.15)}
+.modal.lg{max-width:520px}
+@keyframes mIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.modal h3{font-size:15px;font-weight:600;margin-bottom:4px}
+.modal > p{font-size:12px;color:var(--t2);margin-bottom:14px;line-height:1.6}
+.m-foot{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+.m-foot .btn-d{margin-right:auto}
+
+/* ── TABS (inner) ── */
+.itab-row{display:flex;border-bottom:1px solid var(--br);gap:2px;margin-bottom:14px}
+.itab{padding:7px 12px;font-size:12px;font-weight:500;color:var(--t2);cursor:pointer;border-bottom:2px solid transparent;transition:all .14s;background:none;border-top:none;border-left:none;border-right:none;font-family:var(--font)}
+.itab.on{color:var(--a);border-bottom-color:var(--a)}
+.itpane{display:none}.itpane.on{display:block}
+
+/* ── BADGE ── */
+.tag{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:10px;font-weight:600}
+.t-ok{background:var(--okbg);color:var(--ok)}.t-a{background:var(--abg);color:var(--at)}
+.t-err{background:var(--errbg);color:var(--err)}.t-warn{background:var(--warnbg);color:var(--warn)}
+.t-pu{background:var(--pubg);color:var(--put)}.t-dim{background:var(--bg3);color:var(--t2)}
+
+/* ── HINTS ── */
+.hint{font-size:11px;color:var(--t3);margin-top:3px;line-height:1.5}
+.sep{height:1px;background:var(--br);margin:14px 0}
+.sec{font-size:11px;font-weight:600;color:var(--t2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px}
+.info-box{background:var(--abg);border-radius:8px;padding:10px 12px;font-size:12px;color:var(--at);margin-bottom:12px;line-height:1.6;border:1px solid rgba(45,91,227,.15)}
+
+/* ── FLOW BUILDER ── */
+.flow-box{background:var(--bg3);border:1px dashed var(--br2);border-radius:var(--r);padding:12px;display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:8px}
+.flow-arrow{color:var(--a);font-size:18px}
+
+/* ── CMD BUTTON ── */
+.cmdb{display:inline-flex;align-items:center;gap:3px;padding:3px 9px;border-radius:7px;background:var(--abg);color:var(--at);border:1px solid rgba(45,91,227,.2);cursor:pointer;font-size:10px;font-weight:600;transition:all .15s;white-space:nowrap;font-family:var(--font)}
+.cmdb:hover{background:rgba(45,91,227,.2)}
+
+/* ── MASTER OVERLAY ── */
+#mast-ov{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:2000;display:none;align-items:center;justify-content:center}
+.mast-box{background:var(--bg2);border:1px solid rgba(83,74,183,.3);border-radius:var(--rl);padding:32px;width:310px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.mast-ico{font-size:36px;margin-bottom:12px}
+.mast-box h2{font-size:16px;font-weight:600;margin-bottom:5px}
+.mast-box p{font-size:12px;color:var(--t2);margin-bottom:18px;line-height:1.7}
+
+/* ── CHART ── */
+.chrt-c{position:relative;height:220px}
+
+/* ── MISC ── */
+::-webkit-scrollbar{width:5px;height:5px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--br2);border-radius:3px}
+.spin{display:inline-block;width:15px;height:15px;border:2px solid var(--br2);border-top-color:var(--a);border-radius:50%;animation:sp .5s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+.loading{display:flex;align-items:center;justify-content:center;gap:8px;padding:40px;color:var(--t3);font-size:12px}
+.mono{font-family:var(--mono)}
+
+/* ── TOAST ── */
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:9px 18px;border-radius:8px;font-size:12px;font-weight:600;z-index:3000;display:none;pointer-events:none;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.t-suc{background:var(--ok);color:#fff}.t-err-t{background:var(--err);color:#fff}.t-inf{background:var(--a);color:#fff}
+</style>
+</head>
+<body>
+
+<!-- ═══ AUTH ═══ -->
+<div id="pg-auth">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <div class="auth-ico">Fx</div>
+      <div><h1>Flex<span style="color:var(--a)">App</span></h1><p>Plataforma de controle dinâmico</p></div>
+    </div>
+    <div class="seg">
+      <div class="seg-b on" onclick="authTab('l')">Entrar</div>
+      <div class="seg-b" onclick="authTab('r')">Cadastrar</div>
+    </div>
+    <div id="pl">
+      <div class="fg"><label>E-mail</label><input id="le" type="email" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="fg"><label>Senha</label><input id="lp" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+      <div class="errtxt" id="lerr"></div>
+      <button class="btn btn-p full" style="margin-top:10px" onclick="doLogin()">Entrar</button>
+    </div>
+    <div id="pr" style="display:none">
+      <div class="fg"><label>Nome</label><input id="rn" type="text" placeholder="Seu nome"></div>
+      <div class="fg"><label>E-mail</label><input id="re" type="email" placeholder="seu@email.com"></div>
+      <div class="fg"><label>Senha</label><input id="rp" type="password" placeholder="mínimo 6 caracteres"></div>
+      <div class="errtxt" id="rerr"></div>
+      <div class="oktxt" id="rok"></div>
+      <button class="btn btn-p full" style="margin-top:10px" onclick="doRegister()">Criar conta</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MASTER OVERLAY ═══ -->
+<div id="mast-ov">
+  <div class="mast-box">
+    <div class="mast-ico">🔐</div>
+    <h2>Acesso Master</h2>
+    <p>Digite a senha mestre para ativar o modo de edição total da estrutura do app.</p>
+    <div class="fg" style="text-align:left"><label>Senha mestre</label>
+      <input id="m-inp" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')confirmMaster()">
+    </div>
+    <div class="errtxt" id="m-err" style="text-align:left;margin-bottom:6px"></div>
+    <div style="display:flex;gap:8px;margin-top:8px">
+      <button class="btn full" onclick="closeMastOv()">Cancelar</button>
+      <button class="btn btn-p full" onclick="confirmMaster()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ APP ═══ -->
+<div id="pg-app">
+  <div class="topbar">
+    <div class="t-logo">Flex<span>App</span></div>
+    <div class="t-tabs" id="ttabs">
+      <button class="ttab on" onclick="showPanel('home',this)">Início</button>
+      <button class="ttab" onclick="showPanel('screens',this)" id="tab-screens">Telas</button>
+      <button class="ttab" onclick="showPanel('data',this)" id="tab-data">Dados</button>
+      <button class="ttab hidden" onclick="showPanel('builder',this)" id="tab-builder">Construtor</button>
+      <button class="ttab hidden" onclick="showPanel('users',this)" id="tab-users">Usuários</button>
+    </div>
+    <div class="t-right">
+      <span class="rbadge rb-op" id="rbadge">Operador</span>
+      <button class="mbtn" id="mbtn" onclick="toggleMaster()">MASTER</button>
+      <button class="btn btn-g sm" onclick="doLogout()" title="Sair" style="padding:4px 7px">⏻</button>
+    </div>
+  </div>
+
+  <div class="pg">
+    <!-- HOME -->
+    <div class="panel on" id="panel-home">
+      <div class="stats" id="home-stats">
+        <div class="stat"><div class="stat-v" id="st-sc">0</div><div class="stat-l">Telas</div></div>
+        <div class="stat"><div class="stat-v" id="st-fr">0</div><div class="stat-l">Formulários</div></div>
+        <div class="stat"><div class="stat-v" id="st-rc">0</div><div class="stat-l">Registros</div></div>
+        <div class="stat"><div class="stat-v" id="st-ca">0</div><div class="stat-l">Cadastros</div></div>
+      </div>
+      <div class="card">
+        <div class="c-head"><div><div class="c-title">Telas disponíveis</div><div class="c-sub">Acesse formulários e cadastros</div></div></div>
+        <div id="home-list"><div class="empt">Nenhuma tela criada ainda. O ADM Master deve configurar a estrutura.</div></div>
+      </div>
+    </div>
+
+    <!-- SCREENS (operator) -->
+    <div class="panel" id="panel-screens">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div style="font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.5px">Telas do sistema</div>
+      </div>
+      <div id="screens-list"><div class="empt">Nenhuma tela criada.</div></div>
+    </div>
+
+    <!-- DATA (tabelas) -->
+    <div class="panel" id="panel-data">
+      <div class="tbar">
+        <div style="font-size:11px;font-weight:600;color:var(--t2);text-transform:uppercase;letter-spacing:.5px">Banco de dados</div>
+        <div style="flex:1"></div>
+        <select id="tbl-sel" onchange="renderDataTable()" style="width:220px;font-size:12px">
+          <option value="">Selecionar tabela…</option>
+        </select>
+      </div>
+      <div id="data-view"><div class="empt">Selecione uma tabela para visualizar os registros.</div></div>
+    </div>
+
+    <!-- BUILDER (master) -->
+    <div class="panel" id="panel-builder">
+      <div class="g2">
+        <div>
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+            <div class="sec" style="margin:0">Telas criadas</div>
+            <button class="btn btn-p sm" onclick="openNewScreenModal()">+ Nova tela</button>
+          </div>
+          <div id="builder-list"><div class="empt">Nenhuma tela.</div></div>
+        </div>
+        <div id="builder-detail">
+          <div class="empt" style="padding-top:40px">Selecione uma tela à esquerda para editar.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- USERS (master) -->
+    <div class="panel" id="panel-users">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div class="sec" style="margin:0">Gestão de usuários</div>
+        <button class="btn btn-p sm" onclick="openAddUser()">+ Adicionar</button>
+      </div>
+      <div class="card" style="padding:0;overflow:hidden"><div id="user-list"></div></div>
+      <div class="card" style="margin-top:12px">
+        <div class="c-title" style="margin-bottom:10px">Níveis de acesso</div>
+        <div class="g2" style="font-size:11px;gap:8px">
+          <div style="padding:8px;background:var(--bg3);border-radius:var(--r)"><strong class="t-pu" style="display:inline-block;padding:1px 6px;border-radius:4px;margin-bottom:4px;font-size:10px">ADM Master</strong><br><span style="color:var(--t3)">Senha especial. Edita toda a estrutura do app.</span></div>
+          <div style="padding:8px;background:var(--bg3);border-radius:var(--r)"><strong style="color:var(--at)">Administrador</strong><br><span style="color:var(--t3)">Edita e exclui registros, exporta dados.</span></div>
+          <div style="padding:8px;background:var(--bg3);border-radius:var(--r)"><strong style="color:var(--ok)">Operador</strong><br><span style="color:var(--t3)">Preenche formulários e executa comandos.</span></div>
+          <div style="padding:8px;background:var(--bg3);border-radius:var(--r)"><strong style="color:var(--t2)">Visualizador</strong><br><span style="color:var(--t3)">Acessa e visualiza, sem criar ou editar.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODALS ═══ -->
+<!-- New Screen -->
+<div class="ov" id="ov-newsc">
+  <div class="modal">
+    <h3>Nova tela</h3>
+    <p>Escolha o tipo e defina o nome.</p>
+    <div class="fg"><label>Tipo</label>
+      <select id="nsc-type" onchange="updateTypeHint()">
+        <option value="cadastro">Cadastro — lista base de dados</option>
+        <option value="formulario">Formulário — entrada de dados (cria tabela vinculada)</option>
+      </select>
+    </div>
+    <div class="info-box" id="sc-hint" style="font-size:11px"></div>
+    <div class="fg"><label>Nome da tela</label><input id="nsc-name" placeholder="Ex: Motoristas, Entrada de Veículos…" onkeydown="if(event.key==='Enter')createScreen()"></div>
+    <div class="fg"><label>Ícone (emoji, opcional)</label><input id="nsc-icon" value="📋" style="font-size:18px"></div>
+    <div class="m-foot"><button class="btn" onclick="closeOv('ov-newsc')">Cancelar</button><button class="btn btn-p" onclick="createScreen()">Criar</button></div>
+  </div>
+</div>
+
+<!-- Field Builder -->
+<div class="ov" id="ov-field">
+  <div class="modal lg">
+    <h3 id="field-title">Novo campo</h3>
+    <p>Configure o campo para este formulário ou cadastro.</p>
+    <div class="fg"><label>Nome do campo <span style="color:var(--err)">*</span></label><input id="f-name" placeholder="Ex: Nome do Motorista, Código do Item…"></div>
+    <div class="fg"><label>Tipo de dado</label>
+      <select id="f-type" onchange="onFTypeChange()">
+        <option value="text">📝 Texto</option>
+        <option value="number">🔢 Número</option>
+        <option value="date">📅 Data</option>
+        <option value="time">⏰ Hora</option>
+        <option value="textarea">📄 Texto longo</option>
+        <option value="select">📋 Lista (opções fixas)</option>
+        <option value="linked">🔗 Selecionável (vínculo com cadastro)</option>
+      </select>
+    </div>
+    <div id="f-opts-w" style="display:none">
+      <div class="fg"><label>Opções (uma por linha)</label><textarea id="f-opts" placeholder="Opção A&#10;Opção B&#10;Opção C"></textarea></div>
+    </div>
+    <div id="f-link-w" style="display:none">
+      <div class="fg"><label>Cadastro de origem <span style="color:var(--err)">*</span></label>
+        <select id="f-linkreg" onchange="onLinkRegChange()">
+          <option value="">Selecionar cadastro…</option>
+        </select>
+        <div class="hint">O operador verá a lista deste cadastro para selecionar.</div>
+      </div>
+      <div class="fg"><label>Campo exibido na lista</label>
+        <select id="f-dispf"><option value="">— selecione o cadastro primeiro —</option></select>
+        <div class="hint">Qual campo aparece como opção na lista de seleção.</div>
+      </div>
+      <div id="f-af-w" style="display:none">
+        <div class="sep"></div>
+        <div class="sec">Preenchimento automático</div>
+        <p style="font-size:11px;color:var(--t2);margin-bottom:8px">Ao selecionar um registro do cadastro, outros campos serão preenchidos automaticamente.</p>
+        <div id="f-af-rows"></div>
+        <button class="btn sm" style="margin-top:6px" onclick="addAfRow()">+ Adicionar vínculo de campo</button>
+      </div>
+    </div>
+    <div class="sep"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <label style="display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:8px;border:1px solid var(--br);cursor:pointer"><input type="checkbox" id="f-req" style="width:auto;accent-color:var(--a)"><span style="font-size:12px">Obrigatório</span></label>
+      <label style="display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:8px;border:1px solid var(--br);cursor:pointer"><input type="checkbox" id="f-show" checked style="width:auto;accent-color:var(--a)"><span style="font-size:12px">Exibir na tabela</span></label>
+    </div>
+    <div class="m-foot">
+      <button class="btn" onclick="closeOv('ov-field')">Cancelar</button>
+      <button class="btn btn-p" onclick="saveField()">Salvar campo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Form Modal (fill) -->
+<div class="ov" id="ov-form">
+  <div class="modal lg">
+    <h3 id="form-title">Preencher formulário</h3>
+    <p id="form-sub" style="font-size:12px;color:var(--t3)"></p>
+    <div id="form-fields"></div>
+    <div class="m-foot"><button class="btn" onclick="closeOv('ov-form')">Cancelar</button><button class="btn btn-p" onclick="submitForm()">Salvar registro</button></div>
+  </div>
+</div>
+
+<!-- Command Execute -->
+<div class="ov" id="ov-cmd">
+  <div class="modal lg">
+    <h3 id="cmd-title">Executar ação</h3>
+    <p id="cmd-sub" style="font-size:12px;color:var(--t3)"></p>
+    <div id="cmd-fields"></div>
+    <div class="m-foot"><button class="btn" onclick="closeOv('ov-cmd')">Cancelar</button><button class="btn btn-p" onclick="confirmCmd()">Confirmar</button></div>
+  </div>
+</div>
+
+<!-- New Command -->
+<div class="ov" id="ov-newcmd">
+  <div class="modal lg">
+    <h3>Novo comando</h3>
+    <p>Comandos aparecem como botões na tabela. Ao clicar, coletam dados adicionais e podem mover o registro para outra tabela.</p>
+    <div class="fg"><label>Nome do botão <span style="color:var(--err)">*</span></label><input id="nc-name" placeholder="Ex: Registrar coleta, Expedir, Conferir…"></div>
+    <div class="fg"><label>Ícone (emoji)</label><input id="nc-icon" value="▶"></div>
+    <div class="fg"><label>Instrução ao operador</label><input id="nc-desc" placeholder="Texto explicativo (opcional)"></div>
+    <div class="fg"><label>Mover registro para qual tabela?</label>
+      <select id="nc-target"><option value="">Não mover — apenas atualizar</option></select>
+      <div class="hint">O registro sairá desta tabela e irá para a selecionada, mantendo todos os dados + os novos campos abaixo.</div>
+    </div>
+    <div class="sep"></div>
+    <div class="sec">Campos adicionais coletados por este comando</div>
+    <div id="nc-caf-list"></div>
+    <button class="btn sm" style="margin-top:6px" onclick="addCafRow()">+ Adicionar campo</button>
+    <div class="m-foot">
+      <button class="btn btn-d" id="nc-del-btn" style="display:none;margin-right:auto" onclick="deleteCmd()">🗑 Excluir comando</button>
+      <button class="btn" onclick="closeOv('ov-newcmd')">Cancelar</button>
+      <button class="btn btn-p" onclick="saveCmd()">Salvar comando</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add User -->
+<div class="ov" id="ov-adduser">
+  <div class="modal">
+    <h3>Adicionar usuário</h3>
+    <div class="fg"><label>Nome</label><input id="au-name" placeholder="Nome completo"></div>
+    <div class="fg"><label>E-mail</label><input id="au-email" placeholder="email@exemplo.com"></div>
+    <div class="fg"><label>Nível de acesso</label>
+      <select id="au-role">
+        <option value="operator">Operador</option>
+        <option value="viewer">Visualizador</option>
+        <option value="admin">Administrador</option>
+      </select>
+    </div>
+    <div class="m-foot"><button class="btn" onclick="closeOv('ov-adduser')">Cancelar</button><button class="btn btn-p" onclick="addUser()">Adicionar</button></div>
+  </div>
+</div>
+
+<!-- Rename Modal -->
+<div class="ov" id="ov-rename">
+  <div class="modal">
+    <h3>Renomear</h3>
+    <div class="fg"><label>Novo nome</label><input id="rn-val" onkeydown="if(event.key==='Enter')confirmRename()"></div>
+    <div class="m-foot"><button class="btn" onclick="closeOv('ov-rename')">Cancelar</button><button class="btn btn-p" onclick="confirmRename()">Renomear</button></div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ════════════════ FIREBASE ════════════════
+firebase.initializeApp({
+  apiKey:"AIzaSyADZphyLztYYeMV130uyq_3CYthr6QzBo0",
+  authDomain:"coringa-c0bce.firebaseapp.com",
+  projectId:"coringa-c0bce",
+  storageBucket:"coringa-c0bce.firebasestorage.app",
+  messagingSenderId:"346363639454",
+  appId:"1:346363639454:web:38b288fe0d7abf66daad8f"
+});
+const auth=firebase.auth();
+const db=firebase.firestore();
+const FV=firebase.firestore.FieldValue;
+const MPWD="LOG#001";
+
+// ════════════════ STATE ════════════════
+let CU=null,UP=null,isMaster=false;
+// STATE (synced from Firestore)
+let APP={name:'FlexApp',screens:[],users:[]};
+// screens: [{id,type:'cadastro'|'formulario'|'tabela', name, icon, fields, commands, linkedTableId?, linkedFormId?, charts?}]
+// fields: [{id,name,type,required,showInTable,options?,linkedReg?,displayField?,autoFill?:[{src,dst}]}]
+// commands (on tabela): [{id,name,icon,desc,targetId,fields:[]}]
+let _selScreen=null;  // selected in builder
+let _afRows=[];       // autoFill rows temp
+let _cafRows=[];      // command additional fields temp
+let _activeForm=null; // {screenId}
+let _activeCmd=null;  // {cmdId, recId, tableId}
+let _editCmdId=null;  // editing command id
+let _editCmdTableId=null;
+let _renameCtx=null;  // {type,id}
+let _charts={};
+let _sortK=null,_sortD=1;
+const $=id=>document.getElementById(id);
+const val=id=>$( id)?$( id).value.trim():'';
+
+// ════════════════ AUTH ════════════════
+function authTab(t){
+  document.querySelectorAll('.seg-b').forEach((b,i)=>b.classList.toggle('on',i===(t==='l'?0:1)));
+  $('pl').style.display=t==='l'?'block':'none';$('pr').style.display=t==='r'?'block':'none';
+}
+async function doLogin(){
+  const e=val('le'),p=$('lp').value;
+  $('lerr').style.display='none';
+  if(!e||!p){showErr('lerr','Preencha todos os campos.');return}
+  try{await auth.signInWithEmailAndPassword(e,p)}
+  catch(ex){showErr('lerr',ex.code==='auth/invalid-credential'?'E-mail ou senha incorretos.':ex.message)}
+}
+async function doRegister(){
+  const n=val('rn'),e=val('re'),p=$('rp').value;
+  $('rerr').style.display='none';$('rok').style.display='none';
+  if(!n||!e||!p){showErr('rerr','Preencha todos os campos.');return}
+  if(p.length<6){showErr('rerr','Senha mínimo 6 caracteres.');return}
+  try{
+    const cr=await auth.createUserWithEmailAndPassword(e,p);
+    await db.collection('users').doc(cr.user.uid).set({name:n,email:e,role:'operator',blocked:false,createdAt:FV.serverTimestamp()});
+    $('rok').textContent='Conta criada!';$('rok').style.display='block';
+  }catch(ex){showErr('rerr',ex.message)}
+}
+function doLogout(){isMaster=false;document.documentElement.classList.remove('master');auth.signOut()}
+
+auth.onAuthStateChanged(async u=>{
+  if(u){
+    CU=u;
+    const s=await db.collection('users').doc(u.uid).get();
+    UP=s.exists?s.data():{name:u.email,role:'operator',blocked:false};
+    if(UP.blocked){auth.signOut();alert('Conta bloqueada.');return}
+    $('pg-auth').style.display='none';$('pg-app').style.display='block';
+    await loadApp();
+  }else{
+    CU=null;UP=null;isMaster=false;document.documentElement.classList.remove('master');
+    $('pg-auth').style.display='flex';$('pg-app').style.display='none';
+  }
+});
+
+// ════════════════ MASTER ════════════════
+function toggleMaster(){
+  if(isMaster){exitMaster()}else{openMastOv()}
+}
+function openMastOv(){$('m-inp').value='';$('m-err').style.display='none';$('mast-ov').style.display='flex';setTimeout(()=>$('m-inp').focus(),80)}
+function closeMastOv(){$('mast-ov').style.display='none'}
+function confirmMaster(){
+  if($('m-inp').value===MPWD){
+    isMaster=true;document.documentElement.classList.add('master');
+    $('mbtn').classList.add('on');
+    $('rbadge').className='rbadge rb-master';$('rbadge').textContent='ADM Master';
+    $('tab-builder').classList.remove('hidden');$('tab-users').classList.remove('hidden');
+    closeMastOv();renderHome();renderScreensList();toast('Modo Master ativado','suc');
+  }else{showErr('m-err','Senha incorreta.')}
+}
+function exitMaster(){
+  isMaster=false;document.documentElement.classList.remove('master');
+  $('mbtn').classList.remove('on');
+  $('tab-builder').classList.add('hidden');$('tab-users').classList.add('hidden');
+  setRoleBadge();renderHome();renderScreensList();
+  toast('Modo Master desativado','inf');
+}
+function setRoleBadge(){
+  const cls={operator:'rb-op',viewer:'rb-view',admin:'rb-adm'};
+  const lbl={operator:'Operador',viewer:'Visualizador',admin:'Administrador'};
+  const r=UP?.role||'operator';
+  $('rbadge').className='rbadge '+(cls[r]||'rb-op');
+  $('rbadge').textContent=lbl[r]||'Operador';
+}
+
+// ════════════════ LOAD / SAVE APP ════════════════
+async function loadApp(){
+  const snap=await db.collection('appconfig').doc('main').get();
+  if(snap.exists){APP=snap.data();if(!APP.screens)APP.screens=[];if(!APP.users)APP.users=[];}
+  else{APP={name:'FlexApp',screens:[],users:[]};await saveApp()}
+  setRoleBadge();renderHome();updateStats();
+}
+async function saveApp(){
+  await db.collection('appconfig').doc('main').set(APP);
+}
+function genId(){return 's_'+Date.now()+'_'+Math.random().toString(36).slice(2,6)}
+
+// ════════════════ PANELS ════════════════
+function showPanel(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  $('panel-'+id)?.classList.add('on');
+  document.querySelectorAll('.ttab').forEach(t=>t.classList.remove('on'));
+  if(btn)btn.classList.add('on');
+  if(id==='data'){populateTableSelect()}
+  if(id==='builder'){renderBuilderList()}
+  if(id==='users'){renderUsers()}
+  if(id==='screens'){renderScreensList()}
+  if(id==='home'){renderHome()}
+}
+
+// ════════════════ HOME ════════════════
+function renderHome(){
+  const el=$('home-list');
+  const vis=APP.screens.filter(s=>s.type!=='tabela');
+  if(!vis.length){el.innerHTML='<div class="empt">Nenhuma tela criada ainda.<br>O ADM Master deve configurar a estrutura do app.</div>';updateStats();return}
+  el.innerHTML=vis.map(s=>`<div class="sc-item" onclick="openFormModal('${s.id}')" style="margin-bottom:5px">
+    <span class="sc-typ t-${s.type}">${s.type}</span>
+    <span class="sc-name">${s.icon?s.icon+' ':''}<strong>${s.name}</strong></span>
+    <span style="font-size:11px;color:var(--t3)">${recCount(s.id)} registros →</span>
+  </div>`).join('');
+  updateStats();
+}
+
+function recCount(sid){
+  return APP.screens.find(s=>s.id===sid)?._recCount||0;
+}
+
+async function updateStats(){
+  // Async count from Firestore
+  const total=(await db.collection('records').get()).size;
+  $('st-sc').textContent=APP.screens.length;
+  $('st-fr').textContent=APP.screens.filter(s=>s.type==='formulario').length;
+  $('st-rc').textContent=total;
+  $('st-ca').textContent=APP.screens.filter(s=>s.type==='cadastro').length;
+}
+
+// ════════════════ SCREENS LIST (operator) ════════════════
+function renderScreensList(){
+  const el=$('screens-list');
+  const vis=APP.screens.filter(s=>s.type!=='tabela');
+  if(!vis.length){el.innerHTML='<div class="empt">Nenhuma tela criada.</div>';return}
+  el.innerHTML=vis.map(s=>`<div class="sc-item" onclick="openFormModal('${s.id}')" style="margin-bottom:5px">
+    <span class="sc-typ t-${s.type}">${s.type}</span>
+    <span class="sc-name">${s.icon?s.icon+' ':''}${s.name}</span>
+    <span style="font-size:11px;color:var(--a)">${(s.fields||[]).length} campos</span>
+  </div>`).join('');
+}
+
+// ════════════════ FORM MODAL ════════════════
+function canOperate(){return isMaster||['operator','admin'].includes(UP?.role)}
+function canAdmin(){return isMaster||UP?.role==='admin'}
+
+function openFormModal(sid){
+  const sc=APP.screens.find(s=>s.id===sid);if(!sc)return;
+  if(!canOperate()){toast('Sem permissão para registrar.','err');return}
+  _activeForm={screenId:sid};
+  $('form-title').textContent=(sc.icon?sc.icon+' ':'')+sc.name;
+  $('form-sub').textContent=sc.type==='cadastro'?'Novo cadastro de referência.':'Preencha e grave o registro.';
+  const ff=$('form-fields');
+  if(!(sc.fields||[]).length){ff.innerHTML='<div class="empt">Nenhum campo configurado nesta tela.</div>';openOv('ov-form');return}
+  ff.innerHTML=sc.fields.map((f,i)=>buildInputHtml(f,i,'fm-',{})).join('');
+  openOv('ov-form');
+  // load linked selects
+  sc.fields.filter(f=>f.type==='linked'&&f.linkedReg).forEach((f,i)=>loadLinkedOpts(f,i,'fm-'));
+}
+
+function buildInputHtml(f,i,pfx,data){
+  const id=pfx+i;const val=data[f.id]??'';
+  if(f.type==='linked'){
+    return `<div class="fg"><label>${f.name}${f.required?' <span style="color:var(--err)">*</span>':''}</label>
+      <select id="${id}" onchange="onLinkedChange('${pfx}',${i})"><option value="">Carregando…</option></select></div>`;
+  }
+  if(f.type==='select'){
+    const opts=(f.options||[]).map(o=>`<option value="${o}" ${val===o?'selected':''}>${o}</option>`).join('');
+    return `<div class="fg"><label>${f.name}${f.required?' <span style="color:var(--err)">*</span>':''}</label>
+      <select id="${id}"><option value="">Selecionar…</option>${opts}</select></div>`;
+  }
+  if(f.type==='textarea'){
+    return `<div class="fg"><label>${f.name}${f.required?' <span style="color:var(--err)">*</span>':''}</label>
+      <textarea id="${id}" placeholder="${f.name}…">${val}</textarea></div>`;
+  }
+  const t={number:'number',date:'date',time:'time'}[f.type]||'text';
+  return `<div class="fg"><label>${f.name}${f.required?' <span style="color:var(--err)">*</span>':''}</label>
+    <input type="${t}" id="${id}" value="${val}" placeholder="${f.name}…"></div>`;
+}
+
+async function loadLinkedOpts(field,fieldIndex,pfx){
+  const el=$(pfx+fieldIndex);if(!el)return;
+  const regScreen=APP.screens.find(s=>s.id===field.linkedReg);if(!regScreen)return;
+  const snap=await db.collection('records').where('screenId','==',field.linkedReg).get();
+  el.innerHTML='<option value="">Selecionar…</option>';
+  snap.docs.forEach(d=>{
+    const v=d.data().data?.[field.displayField]||d.id;
+    el.innerHTML+=`<option value="${d.id}" data-docid="${d.id}">${v}</option>`;
+  });
+}
+
+async function onLinkedChange(pfx,fieldIndex){
+  const sc=APP.screens.find(s=>s.id===_activeForm?.screenId);if(!sc)return;
+  const field=(sc.fields||[])[fieldIndex];if(!field||!field.autoFill)return;
+  const sel=$(pfx+fieldIndex);
+  const docId=sel.value;if(!docId)return;
+  const snap=await db.collection('records').doc(docId).get();if(!snap.exists)return;
+  const recData=snap.data().data||{};
+  // Auto-fill: find other fields and fill them
+  (field.autoFill||[]).forEach(af=>{
+    const dstFieldIdx=(sc.fields||[]).findIndex(f=>f.id===af.dst);
+    if(dstFieldIdx<0)return;
+    const el=$(pfx+dstFieldIdx);
+    if(el)el.value=recData[af.src]||'';
+  });
+}
+
+async function submitForm(){
+  const sc=APP.screens.find(s=>s.id===_activeForm?.screenId);if(!sc)return;
+  const fields=sc.fields||[];
+  const data={};let ok=true;
+  for(let i=0;i<fields.length;i++){
+    const f=fields[i];const el=$('fm-'+i);if(!el)continue;
+    const v=el.value;
+    if(f.required&&!v){el.style.borderColor='var(--err)';ok=false}else el.style.borderColor='';
+    if(f.type==='linked'){
+      data[f.id]=el.value; // store doc id
+      data[f.id+'_lbl']=el.options[el.selectedIndex]?.text||v;
+    }else{
+      data[f.id]=f.type==='number'?parseFloat(v)||0:v;
+    }
+  }
+  if(!ok){toast('Preencha os campos obrigatórios.','err');return}
+  const ts=FV.serverTimestamp();
+  const who={uid:CU.uid,name:UP?.name||CU.email};
+  // Save to records
+  await db.collection('records').add({screenId:sc.id,data,createdAt:ts,createdBy:who});
+  // If formulario, also save to linked table
+  if(sc.type==='formulario'&&sc.linkedTableId){
+    await db.collection('records').add({screenId:sc.linkedTableId,data,createdAt:ts,createdBy:who});
+  }
+  await addAudit('submit',sc.id,'',`Registro em "${sc.name}"`);
+  closeOv('ov-form');toast('Registro salvo!','suc');renderHome();updateStats();
+}
+
+// ════════════════ DATA TABLE ════════════════
+function populateTableSelect(){
+  const sel=$('tbl-sel');
+  const tbls=APP.screens.filter(s=>s.type==='tabela'||s.type==='cadastro');
+  sel.innerHTML='<option value="">Selecionar tabela…</option>'+tbls.map(s=>`<option value="${s.id}">${s.icon?s.icon+' ':''}${s.name}</option>`).join('');
+  $('data-view').innerHTML='<div class="empt">Selecione uma tabela para visualizar os registros.</div>';
+}
+
+async function renderDataTable(){
+  const sid=val('tbl-sel');const el=$('data-view');
+  if(!sid){el.innerHTML='<div class="empt">Selecione uma tabela.</div>';return}
+  el.innerHTML='<div class="loading"><div class="spin"></div>Carregando…</div>';
+  const sc=APP.screens.find(s=>s.id===sid);if(!sc){el.innerHTML='';return}
+  const snap=await db.collection('records').where('screenId','==',sid).orderBy('createdAt','desc').get();
+  const recs=snap.docs.map(d=>({id:d.id,...d.data()}));
+  // Get fields from form if this is a table
+  const formSc=sc.type==='tabela'?APP.screens.find(s=>s.id===sc.linkedFormId):sc;
+  const fields=(formSc?.fields||[]).filter(f=>f.showInTable!==false);
+  // Gather any extra keys from records (added by commands)
+  const allKeys=new Set();recs.forEach(r=>Object.keys(r.data||{}).forEach(k=>allKeys.add(k)));
+  const formKeys=new Set(fields.map(f=>f.id));
+  const extra=[...allKeys].filter(k=>!formKeys.has(k)&&!k.endsWith('_lbl'));
+  const allCols=[...fields,...extra.map(k=>({id:k,name:k,type:'text'}))];
+  const cmds=(sc.type==='tabela'?sc.commands:[])||[];
+
+  if(!recs.length){el.innerHTML='<div class="empt">Nenhum registro nesta tabela.</div>';return}
+  el.innerHTML=`<div class="tbar">
+    <div class="srch"><span class="srch-ic">🔍</span><input id="dt-srch" placeholder="Buscar…" oninput="filterDT()"></div>
+    ${canAdmin()?`<button class="btn sm" onclick="exportDT('${sid}','csv')">↓ CSV</button><button class="btn sm" onclick="exportDT('${sid}','xlsx')">↓ XLSX</button>`:''}
+  </div>
+  <div class="tbl-w"><table id="dt-tbl">
+    <thead><tr>
+      ${allCols.map(c=>`<th onclick="sortDT('${c.id}',${JSON.stringify(recs)},${JSON.stringify(allCols)},${JSON.stringify(cmds)},'${sid}')">${c.name}</th>`).join('')}
+      <th>Por</th><th>Data/Hora</th>
+      ${(cmds.length>0||canAdmin())?'<th>Ações</th>':''}
+    </tr></thead>
+    <tbody id="dt-body">${recs.map(r=>dtRow(r,allCols,cmds,sid)).join('')}</tbody>
+  </table></div>
+  <div id="dt-cnt" style="margin-top:6px;font-size:10px;color:var(--t3)">${recs.length} registro(s)</div>`;
+}
+
+function dtRow(r,cols,cmds,sid){
+  const cells=cols.map((c,i)=>{
+    let v=r.data?.[c.id+'_lbl']||r.data?.[c.id]??'';
+    if(c.type==='date'&&v&&!String(v).includes('/')) try{v=new Date(v+'T00:00:00').toLocaleDateString('pt-BR')}catch(e){}
+    return `<td ${i===0?'class="main-col"':''}>${v||'<span style="color:var(--t3)">—</span>'}</td>`;
+  }).join('');
+  const by=r.createdBy?.name||'—';
+  const at=r.createdAt?.toDate?r.createdAt.toDate().toLocaleString('pt-BR'):'—';
+  const cmdBtns=cmds.map(c=>`<button class="cmdb" onclick="openCmdModal('${c.id}','${r.id}','${sid}')">${c.icon||'▶'} ${c.name}</button>`).join(' ');
+  const adm=canAdmin()?`<button class="btn btn-g sm" onclick="editDTRecord('${r.id}','${sid}')">✏</button><button class="btn btn-d sm" onclick="deleteDTRecord('${r.id}','${sid}')">🗑</button>`:'';
+  const hasAct=cmds.length>0||canAdmin();
+  return `<tr id="tr-${r.id}">${cells}<td style="color:var(--t2)">${by}</td><td class="mono" style="font-size:10px;color:var(--t2)">${at}</td>${hasAct?`<td style="white-space:nowrap">${cmdBtns} ${adm}</td>`:''}</tr>`;
+}
+
+function filterDT(){
+  const q=(val('dt-srch')||'').toLowerCase();let n=0;
+  document.querySelectorAll('#dt-body tr').forEach(tr=>{const s=!q||tr.textContent.toLowerCase().includes(q);tr.style.display=s?'':'none';if(s)n++});
+  const el=$('dt-cnt');if(el)el.textContent=n+' registro(s)';
+}
+
+async function deleteDTRecord(recId,sid){
+  if(!confirm('Excluir?'))return;
+  await db.collection('records').doc(recId).delete();
+  await addAudit('delete',sid,recId,'Registro excluído');
+  renderDataTable();updateStats();toast('Registro excluído','err');
+}
+
+async function editDTRecord(recId,sid){
+  if(!canAdmin())return;
+  const snap=await db.collection('records').doc(recId).get();if(!snap.exists)return;
+  const sc=APP.screens.find(s=>s.id===sid);
+  const formSc=sc?.type==='tabela'?APP.screens.find(s=>s.id===sc.linkedFormId):sc;
+  const fields=formSc?.fields||[];
+  const data=snap.data().data||{};
+  // Open form modal pre-filled
+  _activeForm={screenId:sid,editId:recId};
+  $('form-title').textContent='Editar registro';
+  $('form-sub').textContent='';
+  $('form-fields').innerHTML=fields.map((f,i)=>buildInputHtml(f,i,'fm-',data)).join('');
+  $('ov-form').querySelector('.btn-p').onclick=()=>saveEditRecord(recId,sid,fields);
+  openOv('ov-form');
+}
+
+async function saveEditRecord(recId,sid,fields){
+  const data={};
+  for(let i=0;i<fields.length;i++){
+    const f=fields[i];const el=$('fm-'+i);if(!el)continue;
+    data[f.id]=f.type==='number'?parseFloat(el.value)||0:el.value;
+  }
+  await db.collection('records').doc(recId).update({data,updatedAt:FV.serverTimestamp(),updatedBy:{uid:CU.uid,name:UP?.name||CU.email}});
+  closeOv('ov-form');$('ov-form').querySelector('.btn-p').onclick=submitForm;
+  renderDataTable();toast('Registro atualizado','suc');
+}
+
+async function exportDT(sid,fmt){
+  const sc=APP.screens.find(s=>s.id===sid);if(!sc)return;
+  const snap=await db.collection('records').where('screenId','==',sid).orderBy('createdAt','desc').get();
+  const recs=snap.docs.map(d=>({id:d.id,...d.data()}));
+  const formSc=sc.type==='tabela'?APP.screens.find(s=>s.id===sc.linkedFormId):sc;
+  const fields=(formSc?.fields||[]).filter(f=>f.showInTable!==false);
+  const allKeys=new Set();recs.forEach(r=>Object.keys(r.data||{}).forEach(k=>allKeys.add(k)));
+  const extra=[...allKeys].filter(k=>!fields.some(f=>f.id===k)&&!k.endsWith('_lbl'));
+  const cols=[...fields,...extra.map(k=>({id:k,name:k}))];
+  const header=cols.map(c=>c.name).concat(['Por','Data/Hora']);
+  const rows=recs.map(r=>[...cols.map(c=>r.data?.[c.id+'_lbl']||r.data?.[c.id]??''),r.createdBy?.name||'',r.createdAt?.toDate?r.createdAt.toDate().toLocaleString('pt-BR'):'']);
+  const nm=sc.name;
+  if(fmt==='csv'){
+    const blob=new Blob([[header.map(h=>`"${h}"`).join(','),...rows.map(r=>r.map(v=>`"${v}"`).join(','))].join('\n')],{type:'text/csv'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=nm+'.csv';a.click();
+  }else{
+    const wb=XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([header,...rows]),nm.slice(0,30));
+    XLSX.writeFile(wb,nm+'.xlsx');
+  }
+}
+
+// ════════════════ COMMANDS ════════════════
+function openCmdModal(cmdId,recId,tableId){
+  if(!canOperate()){toast('Sem permissão.','err');return}
+  const sc=APP.screens.find(s=>s.id===tableId);
+  const cmd=(sc?.commands||[]).find(c=>c.id===cmdId);if(!cmd)return;
+  _activeCmd={cmdId,recId,tableId};
+  $('cmd-title').textContent=(cmd.icon||'▶')+' '+cmd.name;
+  $('cmd-sub').textContent=cmd.desc||'';
+  const ff=$('cmd-fields');
+  const addFields=cmd.fields||[];
+  ff.innerHTML=addFields.map((f,i)=>{
+    if(f.type==='linked'&&f.linkedReg){
+      return `<div class="fg"><label>${f.name}</label><select id="cf-${i}"><option value="">Carregando…</option></select></div>`;
+    }
+    const t={number:'number',date:'date',time:'time'}[f.type]||'text';
+    return `<div class="fg"><label>${f.name}</label><input type="${t}" id="cf-${i}" placeholder="${f.name}…"></div>`;
+  }).join('')||(cmd.targetId?'<p style="font-size:12px;color:var(--t2)">Confirmar esta ação?</p>':'<p style="font-size:12px;color:var(--t2)">Confirmar?</p>');
+  // Load linked in command fields
+  addFields.filter(f=>f.type==='linked'&&f.linkedReg).forEach(async(f,i)=>{
+    const el=$('cf-'+i);if(!el)return;
+    const snap=await db.collection('records').where('screenId','==',f.linkedReg).get();
+    const regSc=APP.screens.find(s=>s.id===f.linkedReg);
+    const df=f.displayField||regSc?.fields?.[0]?.id||'';
+    el.innerHTML='<option value="">Selecionar…</option>';
+    snap.docs.forEach(d=>{const v=d.data().data?.[df]||d.id;el.innerHTML+=`<option value="${v}">${v}</option>`;});
+  });
+  openOv('ov-cmd');
+}
+
+async function confirmCmd(){
+  const {cmdId,recId,tableId}=_activeCmd;
+  const sc=APP.screens.find(s=>s.id===tableId);
+  const cmd=(sc?.commands||[]).find(c=>c.id===cmdId);if(!cmd)return;
+  const addData={};
+  (cmd.fields||[]).forEach((f,i)=>{const el=$('cf-'+i);if(el)addData[f.id||f.name]=el.value});
+  const snap=await db.collection('records').doc(recId).get();
+  const old=snap.data();
+  const ts=FV.serverTimestamp();
+  const who={uid:CU.uid,name:UP?.name||CU.email};
+  if(cmd.targetId){
+    await db.collection('records').add({screenId:cmd.targetId,data:{...(old.data||{}),...addData},createdAt:ts,createdBy:who,origin:{from:tableId,fromName:sc.name,cmd:cmd.name}});
+    await db.collection('records').doc(recId).delete();
+    const tname=APP.screens.find(s=>s.id===cmd.targetId)?.name||'?';
+    await addAudit('cmd-move',tableId,recId,`"${sc.name}"→"${tname}" via "${cmd.name}"`);
+    toast('Registro movido para '+tname,'suc');
+  }else{
+    await db.collection('records').doc(recId).update({data:{...(old.data||{}),...addData},updatedAt:ts,updatedBy:who});
+    await addAudit('cmd-update',tableId,recId,`Comando "${cmd.name}"`);
+    toast('Atualizado','suc');
+  }
+  closeOv('ov-cmd');renderDataTable();updateStats();
+}
+
+// ════════════════ BUILDER ════════════════
+function renderBuilderList(){
+  const el=$('builder-list');
+  if(!APP.screens.length){el.innerHTML='<div class="empt">Nenhuma tela criada.</div>';return}
+  el.innerHTML=APP.screens.map(s=>`<div class="sc-item${_selScreen===s.id?' sel':''}" onclick="selectScreen('${s.id}')">
+    <span class="sc-typ t-${s.type}">${s.type}</span>
+    <span class="sc-name">${s.icon?s.icon+' ':''}${s.name}</span>
+    <div class="sc-acts">
+      <button class="btn btn-g sm" onclick="event.stopPropagation();startRename('screen','${s.id}')" title="Renomear">✏</button>
+      <button class="btn btn-d sm" onclick="event.stopPropagation();deleteScreen('${s.id}')" title="Excluir">×</button>
+    </div>
+  </div>`).join('');
+}
+
+function selectScreen(id){
+  _selScreen=id;
+  renderBuilderList();
+  renderBuilderDetail();
+}
+
+function renderBuilderDetail(){
+  const el=$('builder-detail');
+  if(!_selScreen){el.innerHTML='<div class="empt" style="padding-top:40px">Selecione uma tela à esquerda.</div>';return}
+  const sc=APP.screens.find(s=>s.id===_selScreen);if(!sc){el.innerHTML='';return}
+  const isTabela=sc.type==='tabela';
+  const formSc=isTabela?APP.screens.find(s=>s.id===sc.linkedFormId):null;
+  const fields=isTabela?(formSc?.fields||[]):(sc.fields||[]);
+
+  el.innerHTML=`
+    <div class="c-title" style="margin-bottom:4px">${sc.icon?sc.icon+' ':''}${sc.name}</div>
+    <div style="display:flex;gap:6px;align-items:center;margin-bottom:14px;flex-wrap:wrap">
+      <span class="sc-typ t-${sc.type}">${sc.type}</span>
+      ${sc.linkedTableId?`<span style="font-size:10px;color:var(--t3)">→ cria tabela "${APP.screens.find(s=>s.id===sc.linkedTableId)?.name||''}" automaticamente</span>`:''}
+      ${isTabela?`<span style="font-size:10px;color:var(--t3)">espelha campos de "${formSc?.name||''}"</span>`:''}
+    </div>
+
+    ${isTabela?`
+    <div class="info-box" style="font-size:11px">Os campos desta tabela são espelhados do formulário "${formSc?.name||''}". Para alterar campos, edite o formulário.</div>
+
+    <div class="sec">Campos (espelhados)</div>
+    <div class="fl-list">${fields.map(f=>`<div class="fl-item"><span class="fl-name">${f.name}</span><span class="fl-type">${f.type}</span></div>`).join('')||'<div class="empt" style="padding:10px">Nenhum campo no formulário.</div>'}</div>
+
+    <div class="sep"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div class="sec" style="margin:0">Comandos</div>
+      <button class="btn btn-p sm" onclick="openNewCmdModal('${sc.id}',null)">+ Novo comando</button>
+    </div>
+    <div id="cmds-list">${renderCmdsList(sc)}</div>
+    `:
+    `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div class="sec" style="margin:0">Campos do formulário</div>
+      <button class="btn btn-p sm" onclick="openFieldModal('${sc.id}',null)">+ Novo campo</button>
+    </div>
+    <div class="fl-list" id="fl-${sc.id}">
+      ${fields.map((f,i)=>`<div class="fl-item">
+        <span class="fl-name">${f.name}</span>
+        <span class="fl-type">${f.type}</span>
+        ${f.type==='linked'&&f.linkedReg?`<span class="fl-link">→ ${APP.screens.find(s=>s.id===f.linkedReg)?.name||'?'}</span>`:''}
+        ${f.required?'<span class="fl-req">OBR</span>':''}
+        <button class="btn btn-g sm" onclick="openFieldModal('${sc.id}','${f.id}')">✏</button>
+        <button class="btn btn-d sm" onclick="deleteField('${sc.id}','${f.id}')">×</button>
+      </div>`).join('')||'<div class="empt" style="padding:12px">Nenhum campo. Clique em "+ Novo campo".</div>'}
+    </div>
+    ${sc.type==='formulario'?`
+    <div class="sep"></div>
+    <div class="sec">Fluxo</div>
+    <div class="flow-box">
+      <span style="padding:4px 8px;background:var(--abg);color:var(--at);border-radius:5px;font-size:12px">${sc.name}</span>
+      <span class="flow-arrow">→</span>
+      <span style="font-size:12px;color:var(--t2)">${APP.screens.find(s=>s.id===sc.linkedTableId)?.name||'tabela vinculada'}</span>
+    </div>`:''}
+    `}
+  `;
+}
+
+function renderCmdsList(sc){
+  const cmds=sc.commands||[];
+  if(!cmds.length) return '<div class="empt" style="padding:10px">Nenhum comando. Comandos permitem mover registros para a próxima etapa.</div>';
+  return `<div class="fl-list">`+cmds.map(c=>`<div class="fl-item">
+    <span style="font-size:16px">${c.icon||'▶'}</span>
+    <span class="fl-name">${c.name}</span>
+    <span style="font-size:10px;color:var(--t3)">${c.targetId?'→ '+APP.screens.find(s=>s.id===c.targetId)?.name:'sem mov.'}</span>
+    <button class="btn btn-g sm" onclick="openNewCmdModal('${sc.id}','${c.id}')">✏</button>
+    <button class="btn btn-d sm" onclick="deleteCmdById('${sc.id}','${c.id}')">×</button>
+  </div>`).join('')+'</div>';
+}
+
+// ════════════════ SCREEN CREATE/DELETE ════════════════
+function openNewScreenModal(){
+  $('nsc-name').value='';$('nsc-type').value='cadastro';$('nsc-icon').value='📋';
+  updateTypeHint();openOv('ov-newsc');setTimeout(()=>$('nsc-name').focus(),80);
+}
+function updateTypeHint(){
+  const hints={cadastro:'Cadastro: lista de referências (ex: motoristas, produtos). Serve para criar campos selecionáveis em formulários.',formulario:'Formulário: entrada de dados. Uma tabela vinculada é criada automaticamente para armazenar todos os registros.'};
+  $('sc-hint').textContent=hints[val('nsc-type')]||'';
+}
+async function createScreen(){
+  const name=val('nsc-name');if(!name){toast('Digite um nome.','err');return}
+  const type=val('nsc-type'),icon=val('nsc-icon')||'📋';
+  const id=genId();
+  const sc={id,type,name,icon,fields:[],commands:[]};
+  APP.screens.push(sc);
+  if(type==='formulario'){
+    const tid=genId();
+    const tsc={id:tid,type:'tabela',name:name+' — Tabela',icon:'📋',linkedFormId:id,fields:[],commands:[],charts:[]};
+    APP.screens.push(tsc);
+    sc.linkedTableId=tid;
+  }
+  await saveApp();closeOv('ov-newsc');renderBuilderList();renderHome();updateStats();
+  toast('"'+name+'" criado!','suc');
+}
+
+async function deleteScreen(id){
+  if(!confirm('Excluir esta tela?'))return;
+  const sc=APP.screens.find(s=>s.id===id);
+  // Also delete linked
+  const toRemove=[id];
+  if(sc?.linkedTableId) toRemove.push(sc.linkedTableId);
+  if(sc?.linkedFormId) toRemove.push(sc.linkedFormId);
+  APP.screens=APP.screens.filter(s=>!toRemove.includes(s.id));
+  // Delete records
+  for(const rid of toRemove){
+    const snap=await db.collection('records').where('screenId','==',rid).get();
+    const b=db.batch();snap.docs.forEach(d=>b.delete(d.ref));await b.commit();
+  }
+  await saveApp();
+  if(_selScreen===id)_selScreen=null;
+  renderBuilderList();renderBuilderDetail();renderHome();updateStats();toast('Tela excluída','err');
+}
+
+// ════════════════ RENAME ════════════════
+function startRename(type,id){
+  const item=APP.screens.find(s=>s.id===id);
+  $('rn-val').value=item?.name||'';
+  _renameCtx={type,id};openOv('ov-rename');setTimeout(()=>$('rn-val').focus(),80);
+}
+async function confirmRename(){
+  const name=val('rn-val');if(!name)return;
+  if(_renameCtx?.type==='screen'){
+    const sc=APP.screens.find(s=>s.id===_renameCtx.id);if(sc)sc.name=name;
+  }
+  await saveApp();closeOv('ov-rename');renderBuilderList();renderBuilderDetail();renderHome();toast('Renomeado','suc');
+}
+
+// ════════════════ FIELD BUILDER ════════════════
+let _fieldCtx=null; // {screenId, fieldId or null}
+
+function openFieldModal(screenId,fieldId){
+  const sc=APP.screens.find(s=>s.id===screenId);if(!sc)return;
+  const ex=fieldId?(sc.fields||[]).find(f=>f.id===fieldId):null;
+  _fieldCtx={screenId,fieldId:fieldId||null};_afRows=ex?.autoFill?[...ex.autoFill]:[];
+  $('field-title').textContent=ex?'Editar campo':'Novo campo';
+  $('f-name').value=ex?.name||'';
+  $('f-type').value=ex?.type||'text';
+  $('f-req').checked=!!ex?.required;
+  $('f-show').checked=ex?.showInTable!==false;
+  $('f-opts').value=(ex?.options||[]).join('\n');
+  $('f-opts-w').style.display=ex?.type==='select'?'block':'none';
+  $('f-link-w').style.display=ex?.type==='linked'?'block':'none';
+  // Populate registry select
+  const regOpts=APP.screens.filter(s=>s.type==='cadastro').map(s=>`<option value="${s.id}" ${ex?.linkedReg===s.id?'selected':''}>${s.icon||''} ${s.name}</option>`).join('');
+  $('f-linkreg').innerHTML='<option value="">Selecionar cadastro…</option>'+regOpts;
+  if(ex?.type==='linked'&&ex.linkedReg){setTimeout(()=>onLinkRegChange(ex.displayField,ex.autoFill,screenId),80)}
+  else{$('f-dispf').innerHTML='<option value="">— selecione o cadastro primeiro —</option>';$('f-af-w').style.display='none';$('f-af-rows').innerHTML=''}
+  openOv('ov-field');setTimeout(()=>$('f-name').focus(),80);
+}
+
+function onFTypeChange(){
+  const t=val('f-type');
+  $('f-opts-w').style.display=t==='select'?'block':'none';
+  $('f-link-w').style.display=t==='linked'?'block':'none';
+}
+
+async function onLinkRegChange(preDisp,preAf,ctxId){
+  const rid=val('f-linkreg');if(!rid){$('f-dispf').innerHTML='<option value="">—</option>';$('f-af-w').style.display='none';return}
+  const regSc=APP.screens.find(s=>s.id===rid);
+  const dispOpts=(regSc?.fields||[]).map(f=>`<option value="${f.id}" ${preDisp===f.id?'selected':''}>${f.name}</option>`).join('');
+  $('f-dispf').innerHTML=dispOpts||'<option value="">Sem campos no cadastro</option>';
+  $('f-af-w').style.display='block';
+  _afRows=preAf||[];
+  // Get form fields for destination options
+  const formId=ctxId||_fieldCtx?.screenId;
+  const formSc=APP.screens.find(s=>s.id===formId);
+  renderAfRows(rid,formSc?.fields||[]);
+}
+
+function renderAfRows(rid,destFields){
+  const regSc=APP.screens.find(s=>s.id===rid);
+  const srcOpts=(regSc?.fields||[]).map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
+  const dstOpts=(destFields||[]).filter(f=>f.id!==(_fieldCtx?.fieldId)).map(f=>`<option value="${f.id}">${f.name}</option>`).join('');
+  $('f-af-rows').innerHTML=_afRows.filter(Boolean).map((af,i)=>`
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px">
+      <span style="font-size:11px;color:var(--t2);white-space:nowrap">Do cadastro:</span>
+      <select style="flex:1" onchange="_afRows[${i}]&&(_afRows[${i}].src=this.value)">${srcOpts.replace(`value="${af.src}"`,`value="${af.src}" selected`)}</select>
+      <span style="font-size:11px;color:var(--t2)">→ preenche:</span>
+      <select style="flex:1" onchange="_afRows[${i}]&&(_afRows[${i}].dst=this.value)">${dstOpts.replace(`value="${af.dst}"`,`value="${af.dst}" selected`)}</select>
+      <button class="btn btn-d sm" onclick="_afRows[${i}]=null;renderAfRows('${rid}',[])">×</button>
+    </div>`).join('');
+}
+
+function addAfRow(){
+  const rid=val('f-linkreg');_afRows.push({src:'',dst:''});
+  const sc=APP.screens.find(s=>s.id===_fieldCtx?.screenId);
+  renderAfRows(rid,sc?.fields||[]);
+}
+
+async function saveField(){
+  const name=val('f-name');if(!name){toast('Digite o nome do campo.','err');return}
+  const sc=APP.screens.find(s=>s.id===_fieldCtx?.screenId);if(!sc)return;
+  const type=val('f-type');
+  const field={id:_fieldCtx?.fieldId||'f_'+Date.now(),name,type,required:$('f-req').checked,showInTable:$('f-show').checked};
+  if(type==='select') field.options=val('f-opts').split('\n').map(s=>s.trim()).filter(Boolean);
+  if(type==='linked'){field.linkedReg=val('f-linkreg');field.displayField=val('f-dispf');field.autoFill=_afRows.filter(Boolean).filter(af=>af.src&&af.dst)}
+  if(!sc.fields)sc.fields=[];
+  const idx=sc.fields.findIndex(f=>f.id===field.id);
+  if(idx>=0)sc.fields[idx]=field;else sc.fields.push(field);
+  // Mirror to linked table
+  if(sc.linkedTableId){const ts=APP.screens.find(s=>s.id===sc.linkedTableId);if(ts)ts.fields=[...sc.fields]}
+  await saveApp();closeOv('ov-field');renderBuilderDetail();toast('"'+name+'" salvo','suc');
+}
+
+async function deleteField(screenId,fieldId){
+  const sc=APP.screens.find(s=>s.id===screenId);if(!sc)return;
+  sc.fields=(sc.fields||[]).filter(f=>f.id!==fieldId);
+  if(sc.linkedTableId){const ts=APP.screens.find(s=>s.id===sc.linkedTableId);if(ts)ts.fields=[...sc.fields]}
+  await saveApp();renderBuilderDetail();toast('Campo removido','err');
+}
+
+// ════════════════ COMMAND BUILDER ════════════════
+function openNewCmdModal(tableId,cmdId){
+  _editCmdId=cmdId||null;_editCmdTableId=tableId;
+  const sc=APP.screens.find(s=>s.id===tableId);
+  const ex=cmdId?(sc?.commands||[]).find(c=>c.id===cmdId):null;
+  _cafRows=ex?.fields?[...ex.fields]:[];
+  $('nc-name').value=ex?.name||'';$('nc-icon').value=ex?.icon||'▶';$('nc-desc').value=ex?.desc||'';
+  // Target: only tabela screens
+  const tableScs=APP.screens.filter(s=>s.type==='tabela'&&s.id!==tableId);
+  $('nc-target').innerHTML='<option value="">Não mover — apenas atualizar</option>'+tableScs.map(s=>`<option value="${s.id}" ${ex?.targetId===s.id?'selected':''}>${s.icon||''}${s.name}</option>`).join('');
+  $('nc-del-btn').style.display=cmdId?'inline-flex':'none';
+  renderCafRows();
+  openOv('ov-newcmd');
+}
+
+function renderCafRows(){
+  const regOpts=APP.screens.filter(s=>s.type==='cadastro').map(s=>`<option value="${s.id}">${s.name}</option>`).join('');
+  $('nc-caf-list').innerHTML=_cafRows.filter(Boolean).map((f,i)=>`
+    <div class="fl-item" id="caf-${i}" style="margin-bottom:5px">
+      <input type="text" value="${f.name}" style="flex:1;background:var(--bg3)" placeholder="Nome" onchange="_cafRows[${i}]&&(_cafRows[${i}].name=this.value)">
+      <select style="width:110px;font-size:11px" onchange="_cafRows[${i}]&&(_cafRows[${i}].type=this.value);toggleCafLink(${i},this.value)">
+        ${['text','number','date','time','linked'].map(t=>`<option value="${t}" ${f.type===t?'selected':''}>${t}</option>`).join('')}
+      </select>
+      <div id="caf-lnk-${i}" style="${f.type==='linked'?'':'display:none'}">
+        <select style="font-size:11px" onchange="_cafRows[${i}]&&(_cafRows[${i}].linkedReg=this.value)">
+          <option value="">Cadastro…</option>${regOpts.replace(`value="${f.linkedReg}"`,`value="${f.linkedReg}" selected`)}
+        </select>
+      </div>
+      <button class="btn btn-d sm" onclick="_cafRows[${i}]=null;renderCafRows()">×</button>
+    </div>`).join('');
+}
+function toggleCafLink(i,type){$('caf-lnk-'+i).style.display=type==='linked'?'inline-flex':'none'}
+function addCafRow(){_cafRows.push({id:'cf_'+Date.now(),name:'Campo '+((_cafRows.filter(Boolean).length)+1),type:'text',required:false});renderCafRows()}
+
+async function saveCmd(){
+  const name=val('nc-name');if(!name){toast('Digite o nome.','err');return}
+  const sc=APP.screens.find(s=>s.id===_editCmdTableId);if(!sc)return;
+  const cmd={id:_editCmdId||'cmd_'+Date.now(),name,icon:val('nc-icon')||'▶',desc:val('nc-desc'),targetId:val('nc-target'),fields:_cafRows.filter(Boolean)};
+  if(!sc.commands)sc.commands=[];
+  const idx=sc.commands.findIndex(c=>c.id===_editCmdId);
+  if(idx>=0)sc.commands[idx]=cmd;else sc.commands.push(cmd);
+  await saveApp();closeOv('ov-newcmd');renderBuilderDetail();toast('"'+name+'" salvo','suc');
+}
+async function deleteCmdById(tableId,cmdId){
+  const sc=APP.screens.find(s=>s.id===tableId);if(!sc)return;
+  sc.commands=(sc.commands||[]).filter(c=>c.id!==cmdId);
+  await saveApp();renderBuilderDetail();toast('Comando excluído','err');
+}
+async function deleteCmd(){await deleteCmdById(_editCmdTableId,_editCmdId);closeOv('ov-newcmd')}
+
+// ════════════════ USERS ════════════════
+async function renderUsers(){
+  const snap=await db.collection('users').orderBy('createdAt','desc').get();
+  const users=snap.docs.map(d=>({id:d.id,...d.data()}));
+  const COLS=['#2d5be3','#1d9e75','#ba7517','#a32d2d','#534ab7','#0891b2'];
+  const ROLES=[{v:'viewer',l:'Visualizador'},{v:'operator',l:'Operador'},{v:'admin',l:'Administrador'}];
+  $('user-list').innerHTML=users.map((u,i)=>{
+    const ini=(u.name||u.email||'?').split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+    const col=COLS[i%COLS.length];const isMe=u.id===CU.uid;
+    return `<div class="u-row">
+      <div class="av" style="background:${col}18;color:${col};border:1px solid ${col}22">${ini}</div>
+      <div class="u-info"><div class="u-nm">${u.name||'—'}${isMe?' <span class="tag t-a">você</span>':''}</div><div class="u-em">${u.email||'—'}</div></div>
+      ${isMe?`<span class="tag t-a">${u.role}</span>`:`
+        <select class="btn sm" style="padding:4px 8px" onchange="setRole('${u.id}',this.value)">
+          ${ROLES.map(r=>`<option value="${r.v}" ${u.role===r.v?'selected':''}>${r.l}</option>`).join('')}
+        </select>
+        <button class="btn sm ${u.blocked?'btn-p':'btn-d'}" onclick="toggleBlock('${u.id}',${!u.blocked})">${u.blocked?'Desbloquear':'Bloquear'}</button>
+      `}
+    </div>`;
+  }).join('');
+}
+async function setRole(uid,role){await db.collection('users').doc(uid).update({role});renderUsers();toast('Permissão atualizada','suc')}
+async function toggleBlock(uid,blocked){await db.collection('users').doc(uid).update({blocked});renderUsers();toast(blocked?'Usuário bloqueado':'Desbloqueado',blocked?'err':'suc')}
+function openAddUser(){$('au-name').value='';$('au-email').value='';openOv('ov-adduser')}
+async function addUser(){
+  const n=val('au-name'),e=val('au-email'),r=val('au-role');
+  if(!n||!e){toast('Preencha nome e e-mail','err');return}
+  await db.collection('users').add({name:n,email:e,role:r,blocked:false,createdAt:FV.serverTimestamp()});
+  closeOv('ov-adduser');renderUsers();toast('Usuário adicionado','suc');
+}
+
+// ════════════════ UTILS ════════════════
+function openOv(id){$(id).classList.add('open')}
+function closeOv(id){$(id).classList.remove('open')}
+function showErr(id,t){const el=$(id);el.textContent=t;el.style.display='block'}
+function toast(msg,type){
+  const t=$('toast'),cls={suc:'t-suc',err:'t-err-t',inf:'t-inf'};
+  t.textContent=msg;t.className='toast '+(cls[type]||'t-inf');t.style.display='block';
+  clearTimeout(t._tid);t._tid=setTimeout(()=>t.style.display='none',2500);
+}
+async function addAudit(type,sid,rid,action){
+  try{await db.collection('audit').add({type,screenId:sid,recordId:rid,action,user:{uid:CU.uid,name:UP?.name||CU.email},at:FV.serverTimestamp()})}catch(_){}
+}
+</script>
+</body>
+</html>
