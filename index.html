@@ -12,7 +12,9 @@
   // ── COLE AQUI SUA CONFIGURAÇÃO DO FIREBASE ──
   // Substitua os valores abaixo pelos do seu projeto Firebase
   // (Console Firebase → Configurações do projeto → Seus apps → SDK)
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  
+     
+     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
   import {
     getAuth,
     createUserWithEmailAndPassword,
@@ -33,15 +35,15 @@
     updateDoc,
     deleteDoc
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
+//--- COLEI AQUI O FIREBASE --GNS
   const firebaseConfig = {
-    apiKey: "SUA_API_KEY",
-    authDomain: "SEU_AUTH_DOMAIN",
-    projectId: "SEU_PROJECT_ID",
-    storageBucket: "SEU_STORAGE_BUCKET",
-    messagingSenderId: "SEU_MSG_SENDER_ID",
-    appId: "SEU_APP_ID"
-  };
+  apiKey: "AIzaSyADZphyLztYYeMV130uyq_3CYthr6QzBo0",
+  authDomain: "coringa-c0bce.firebaseapp.com",
+  projectId: "coringa-c0bce",
+  storageBucket: "coringa-c0bce.firebasestorage.app",
+  messagingSenderId: "346363639454",
+  appId: "1:346363639454:web:38b288fe0d7abf66daad8f"
+};
 
   const app = initializeApp(firebaseConfig);
   window._fbAuth = getAuth(app);
