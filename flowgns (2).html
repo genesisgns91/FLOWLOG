@@ -1,0 +1,1501 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>FlowGNS</title>
+
+<script type="module">
+import{initializeApp}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import{getAuth,createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,onAuthStateChanged,signOut,updateProfile}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import{getFirestore,doc,setDoc,getDoc,onSnapshot,collection,getDocs,updateDoc,deleteDoc}from"https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+const app=initializeApp({apiKey:"AIzaSyADZphyLztYYeMV130uyq_3CYthr6QzBo0",authDomain:"coringa-c0bce.firebaseapp.com",projectId:"coringa-c0bce",storageBucket:"coringa-c0bce.firebasestorage.app",messagingSenderId:"346363639454",appId:"1:346363639454:web:38b288fe0d7abf66daad8f"});
+window._fbAuth=getAuth(app);window._fbDb=getFirestore(app);
+window._fbFns={createUserWithEmailAndPassword,signInWithEmailAndPassword,sendPasswordResetEmail,onAuthStateChanged,signOut,updateProfile,doc,setDoc,getDoc,onSnapshot,collection,getDocs,updateDoc,deleteDoc};
+window.dispatchEvent(new Event('firebaseReady'));
+</script>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8f7f4;--bg2:#fff;--bg3:#f0efe9;
+  --text:#1a1a18;--text2:#555550;--text3:#888880;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.18);
+  --accent:#2d5be3;--accent-l:#e8eefb;--accent-t:#1a3a9f;
+  --ok:#1d9e75;--ok-l:#e1f5ee;
+  --warn:#ba7517;--warn-l:#faeeda;
+  --err:#a32d2d;--err-l:#fcebeb;
+  --purple:#534ab7;--purple-l:#eeedfe;
+  --r:10px;--r2:14px;
+  --font:'DM Sans',system-ui,sans-serif;
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1c1c1a;--bg2:#252523;--bg3:#2e2e2b;
+  --text:#f0efe9;--text2:#b4b2a9;--text3:#888780;
+  --border:rgba(255,255,255,0.1);--border2:rgba(255,255,255,0.18);
+  --accent:#5b7ef5;--accent-l:#1a2040;--accent-t:#b5c8ff;
+  --ok:#1d9e75;--ok-l:#04342c;
+  --warn:#ef9f27;--warn-l:#412402;
+  --err:#e24b4a;--err-l:#501313;
+  --purple:#7f77dd;--purple-l:#26215c;
+}}
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600&display=swap');
+body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+
+/* AUTH */
+#authScreen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px}
+.auth-card{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r2);padding:32px;width:380px;max-width:100%;box-shadow:0 4px 24px rgba(0,0,0,.07)}
+.auth-logo{font-size:22px;font-weight:600;letter-spacing:-.5px;margin-bottom:6px}
+.auth-logo span,.logo span{color:var(--accent)}
+.auth-subtitle{font-size:13px;color:var(--text3);margin-bottom:24px}
+.auth-tabs{display:flex;gap:2px;margin-bottom:20px;background:var(--bg3);border-radius:8px;padding:3px}
+.auth-tab{flex:1;padding:6px 10px;border-radius:6px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-size:13px;font-family:var(--font);transition:all .15s}
+.auth-tab.active{background:var(--bg2);color:var(--text);font-weight:500;box-shadow:0 1px 4px rgba(0,0,0,.08)}
+.auth-form{display:none}.auth-form.active{display:block}
+.auth-link{font-size:12px;color:var(--accent);cursor:pointer;text-align:center;margin-top:12px;display:block;text-decoration:underline}
+.auth-error{font-size:12px;color:var(--err);background:var(--err-l);border-radius:6px;padding:8px 10px;margin-top:8px;display:none}
+
+/* APP */
+#mainApp{display:none}
+.topbar{display:flex;align-items:center;gap:10px;padding:10px 16px;background:var(--bg2);border-bottom:.5px solid var(--border);flex-wrap:wrap;position:sticky;top:0;z-index:10}
+.logo{font-weight:600;font-size:15px;letter-spacing:-.3px;flex:0 0 auto}
+.nav-tabs{display:flex;gap:2px;flex:1;justify-content:center;flex-wrap:wrap}
+.nav-tab{padding:5px 12px;border-radius:7px;border:none;background:transparent;color:var(--text2);cursor:pointer;font-size:13px;transition:all .15s;font-family:var(--font)}
+.nav-tab:hover{background:var(--bg3);color:var(--text)}
+.nav-tab.active{background:var(--accent-l);color:var(--accent-t);font-weight:500}
+.nav-tab.hidden{display:none}
+.topbar-right{display:flex;align-items:center;gap:8px;flex:0 0 auto}
+.master-btn{padding:5px 14px;border-radius:7px;border:.5px solid var(--border2);background:var(--bg3);color:var(--text2);cursor:pointer;font-size:12px;font-weight:500;transition:all .15s;font-family:var(--font)}
+.master-btn.active{background:var(--purple-l);color:var(--purple);border-color:var(--purple)}
+.logout-btn{padding:5px 10px;border-radius:7px;border:.5px solid var(--border);background:transparent;color:var(--text3);cursor:pointer;font-size:12px;font-family:var(--font);transition:all .15s}
+.logout-btn:hover{background:var(--bg3);color:var(--text)}
+.role-badge{padding:3px 10px;border-radius:20px;font-size:11px;font-weight:500}
+.role-master{background:var(--purple-l);color:var(--purple)}
+.role-adm{background:var(--accent-l);color:var(--accent-t)}
+.role-operator{background:var(--ok-l);color:var(--ok)}
+.role-viewer,.role-blocked{background:var(--bg3);color:var(--text2)}
+.role-blocked{background:var(--err-l);color:var(--err)}
+
+/* CONTENT */
+.content{padding:20px;max-width:1100px;margin:0 auto}
+.panel{display:none}.panel.active{display:block}
+.section-title{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}
+.card{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r2);padding:16px;margin-bottom:12px}
+.card-title{font-weight:500;font-size:14px}
+
+/* BOTÕES */
+.btn{padding:6px 14px;border-radius:7px;border:.5px solid var(--border2);background:transparent;color:var(--text);cursor:pointer;font-size:13px;transition:all .15s;font-family:var(--font)}
+.btn:hover{background:var(--bg3)}
+.btn-primary{background:var(--accent);color:#fff;border-color:var(--accent)}.btn-primary:hover{opacity:.9}
+.btn-sm{padding:4px 10px;font-size:12px}
+.btn-danger{color:var(--err);border-color:var(--err-l)}.btn-danger:hover{background:var(--err-l)}
+.btn-success{background:var(--ok);color:#fff;border-color:var(--ok)}.btn-success:hover{opacity:.9}
+.btn-ghost{border-color:transparent;color:var(--text3)}.btn-ghost:hover{background:var(--bg3);color:var(--text)}
+.cmd-btn{padding:6px 14px;border-radius:7px;border:.5px solid var(--warn);background:var(--warn-l);color:var(--warn);cursor:pointer;font-size:12px;font-weight:500;transition:all .15s;display:flex;align-items:center;gap:5px;font-family:var(--font)}
+.cmd-btn:hover{background:var(--warn);color:#fff}
+.back-btn{display:flex;align-items:center;gap:4px;font-size:12px;color:var(--text3);cursor:pointer;padding:4px 8px;border-radius:6px;border:none;background:transparent;transition:.15s;font-family:var(--font)}
+.back-btn:hover{background:var(--bg3);color:var(--text)}
+
+/* TELAS */
+.screen-list{display:flex;flex-direction:column;gap:8px}
+.screen-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--bg3);border-radius:var(--r);cursor:pointer;transition:all .15s;border:.5px solid transparent}
+.screen-item:hover{border-color:var(--border)}
+.screen-item.selected{border-color:var(--accent);background:var(--accent-l)}
+.screen-type-badge{font-size:10px;font-weight:500;padding:2px 7px;border-radius:5px;white-space:nowrap}
+.type-cadastro{background:#e1f5ee;color:#0f6e56}
+.type-formulario{background:#e8eefb;color:#1a3a9f}
+.type-tabela{background:#eeedfe;color:#3c3489}
+.type-tabela-form{background:#faeeda;color:#7a4a00}
+@media(prefers-color-scheme:dark){
+  .type-cadastro{background:#04342c;color:#5dcaa5}
+  .type-formulario{background:#1a2040;color:#b5c8ff}
+  .type-tabela{background:#26215c;color:#afa9ec}
+  .type-tabela-form{background:#412402;color:#f5c57a}
+}
+.screen-name{font-size:13px;font-weight:500;flex:1}
+.screen-actions{display:flex;gap:4px;opacity:0;transition:.15s}
+.screen-item:hover .screen-actions{opacity:1}
+
+/* GRIDS */
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+@media(max-width:600px){.grid2,.grid3{grid-template-columns:1fr}}
+
+/* STATS */
+.stat-card{background:var(--bg3);border-radius:var(--r);padding:14px;text-align:center}
+.stat-num{font-size:22px;font-weight:600}
+.stat-label{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* INPUTS */
+input,select,textarea{background:var(--bg3);border:.5px solid var(--border2);border-radius:7px;padding:8px 10px;font-size:13px;color:var(--text);font-family:var(--font);width:100%;transition:border .15s;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--accent)}
+label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px;margin-top:10px}
+.form-row{display:flex;gap:10px}.form-row>*{flex:1}
+
+/* FIELDS */
+.field-list{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.field-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg3);border-radius:8px;border:.5px solid var(--border)}
+.field-type-tag{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--warn-l);color:var(--warn);font-weight:500}
+.field-master-tag{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--purple-l);color:var(--purple);font-weight:500}
+.field-sum-tag{font-size:10px;padding:2px 6px;border-radius:4px;background:var(--ok-l);color:var(--ok);font-weight:500}
+.field-name{font-size:13px;font-weight:500;flex:1}
+.field-link{font-size:11px;color:var(--accent)}
+
+/* USERS */
+.user-row{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:.5px solid var(--border);transition:.15s}
+.user-row:hover{background:var(--bg3)}.user-row:last-child{border-bottom:none}
+.avatar{width:32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0}
+.user-name{font-size:13px;font-weight:500}
+.user-email{font-size:11px;color:var(--text3)}
+
+/* TABLE */
+.table-wrap{overflow:auto;border-radius:var(--r);border:.5px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text3);border-bottom:.5px solid var(--border);background:var(--bg3);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+td{padding:8px 12px;border-bottom:.5px solid var(--border);color:var(--text)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--bg3)}
+.sum-total-row td{background:var(--accent-l);color:var(--accent-t);font-weight:600;border-top:1.5px solid var(--accent)}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:100}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border-radius:var(--r2);border:.5px solid var(--border);padding:20px;width:440px;max-width:96vw;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:15px;font-weight:600;margin-bottom:4px}
+.modal p{font-size:13px;color:var(--text2);margin-bottom:8px}
+.modal-actions{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:9px 18px;border-radius:8px;font-size:13px;font-weight:500;z-index:200;display:none;pointer-events:none}
+.toast.success{background:var(--ok);color:#fff}
+.toast.danger{background:var(--err);color:#fff}
+.toast.info{background:var(--accent);color:#fff}
+
+/* UTILS */
+.empty-state{text-align:center;padding:32px;color:var(--text3);font-size:13px}
+.hint{font-size:11px;color:var(--text3);margin-top:4px}
+.divider{height:.5px;background:var(--border);margin:14px 0}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.required-badge{font-size:10px;color:var(--err);font-weight:500}
+.builder-section{background:var(--bg3);border-radius:var(--r);padding:12px;margin-top:10px}
+.builder-section-title{font-size:11px;font-weight:500;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+.action-list{display:flex;flex-direction:column;gap:6px}
+.action-item{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--bg2);border-radius:8px;border:.5px solid var(--border)}
+.action-item-name{font-size:13px;font-weight:500;flex:1}
+.action-item-detail{font-size:11px;color:var(--text3)}
+
+/* HOME */
+.home-section{margin-bottom:28px}
+.home-section-header{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px;padding:10px 12px;border:.5px solid var(--border);border-radius:var(--r);background:var(--bg2);transition:background .15s}
+.home-section-header:hover{background:var(--bg3)}
+.home-section-count{margin-left:auto;background:var(--bg3);border-radius:20px;padding:1px 8px;font-size:11px;color:var(--text3);font-weight:500}
+.home-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.home-card{display:flex;align-items:center;gap:12px;padding:12px 14px;background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r2);cursor:pointer;transition:all .15s}
+.home-card:hover{border-color:var(--accent);box-shadow:0 2px 10px rgba(0,0,0,.06);transform:translateY(-1px)}
+.home-card-icon{font-size:22px;width:42px;height:42px;display:flex;align-items:center;justify-content:center;border-radius:10px;flex-shrink:0}
+.type-cadastro-icon{background:#e1f5ee}.type-formulario-icon{background:#e8eefb}
+.type-tabela-icon{background:#eeedfe}.type-tabela-form-icon{background:#faeeda}
+@media(prefers-color-scheme:dark){
+  .type-cadastro-icon{background:#04342c}.type-formulario-icon{background:#1a2040}
+  .type-tabela-icon{background:#26215c}.type-tabela-form-icon{background:#412402}
+}
+.home-card-body{flex:1;min-width:0}
+.home-card-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:4px}
+.home-card-meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.home-card-count,.action-item-detail{font-size:11px;color:var(--text3)}
+.home-card-arrow{font-size:18px;color:var(--text3);flex-shrink:0}
+
+/* MULTI ROW */
+.multi-row{background:var(--bg3);border-radius:var(--r);border:.5px solid var(--border);padding:10px 12px}
+.multi-row-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.multi-row-fields{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px}
+.multi-row-field label{font-size:11px;margin-top:0;margin-bottom:2px}
+.multi-row-field input,.multi-row-field select{font-size:12px;padding:6px 8px}
+
+/* TABLE VIEW */
+.table-view-container{background:var(--bg2);border:.5px solid var(--border);border-radius:var(--r2);overflow:hidden;margin-bottom:12px}
+.table-view-header{display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:.5px solid var(--border);gap:10px;flex-wrap:wrap}
+.table-view-title{font-size:13px;font-weight:500;flex:1}
+.table-action-buttons{display:flex;gap:6px;padding:10px 14px;border-bottom:.5px solid var(--border);background:var(--bg3);flex-wrap:wrap}
+
+.img-thumb{width:72px;height:72px;object-fit:cover;border-radius:6px;border:.5px solid var(--border);cursor:pointer;transition:.15s}
+.img-thumb:hover{transform:scale(1.05)}
+</style>
+</head>
+<body>
+
+<!-- AUTH -->
+<div id="authScreen">
+  <div class="auth-card">
+    <div class="auth-logo">Flow<span>GNS</span></div>
+    <div class="auth-subtitle">Sistema de gestão personalizável</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Entrar</button>
+      <button class="auth-tab" onclick="switchAuthTab('cadastro')">Criar conta</button>
+    </div>
+    <div class="auth-form active" id="authLogin">
+      <label>E-mail</label>
+      <input type="email" id="loginEmail" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')doLogin()"/>
+      <label>Senha</label>
+      <input type="password" id="loginPwd" placeholder="Sua senha" onkeydown="if(event.key==='Enter')doLogin()"/>
+      <div class="auth-error" id="loginErr"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="doLogin()">Entrar</button>
+      <span class="auth-link" onclick="switchAuthTab('recover')">Esqueceu a senha?</span>
+    </div>
+    <div class="auth-form" id="authCadastro">
+      <label>Nome completo</label><input type="text" id="cadNome" placeholder="Seu nome"/>
+      <label>E-mail</label><input type="email" id="cadEmail" placeholder="seu@email.com"/>
+      <label>Senha</label><input type="password" id="cadPwd" placeholder="Mínimo 6 caracteres"/>
+      <div class="auth-error" id="cadErr"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="doCadastro()">Criar conta</button>
+      <div class="hint" style="text-align:center;margin-top:10px">Novos usuários ficam como <strong>Operador</strong> até o Master alterar.</div>
+    </div>
+    <div class="auth-form" id="authRecover">
+      <label>E-mail da conta</label>
+      <input type="email" id="recoverEmail" placeholder="seu@email.com" onkeydown="if(event.key==='Enter')doRecover()"/>
+      <div class="auth-error" id="recoverErr" style="color:var(--ok)"></div>
+      <button class="btn btn-primary" style="width:100%;margin-top:16px" onclick="doRecover()">Enviar link de recuperação</button>
+      <span class="auth-link" onclick="switchAuthTab('login')">← Voltar</span>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="mainApp">
+<div class="topbar">
+  <div class="logo">Flow<span>GNS</span></div>
+  <div class="nav-tabs" id="navTabs">
+    <button class="nav-tab active" data-panel="home" onclick="showPanel('home',this)">Início</button>
+    <button class="nav-tab hidden" data-panel="builder" id="tabBuilder" onclick="showPanel('builder',this)">Construtor</button>
+    <button class="nav-tab hidden" data-panel="users" id="tabUsers" onclick="showPanel('users',this)">Usuários</button>
+  </div>
+  <div class="topbar-right">
+    <span class="role-badge" id="roleBadge">Operador</span>
+    <button class="master-btn" id="masterBtn" onclick="toggleMaster()">MASTER</button>
+    <button class="btn logout-btn" onclick="openEmailRecipientsModal()" title="Destinatários de e-mail">📧</button>
+    <button class="logout-btn" onclick="doLogout()">↪ Sair</button>
+  </div>
+</div>
+<div class="content">
+  <div class="panel active" id="panel-home">
+    <div class="grid3" style="margin-bottom:20px">
+      <div class="stat-card"><div class="stat-num" id="statScreens">0</div><div class="stat-label">Telas criadas</div></div>
+      <div class="stat-card"><div class="stat-num" id="statForms">0</div><div class="stat-label">Formulários</div></div>
+      <div class="stat-card"><div class="stat-num" id="statRecords">0</div><div class="stat-label">Registros</div></div>
+    </div>
+    <div id="homeContent"></div>
+  </div>
+  <div class="panel" id="panel-tableview"><div id="tableViewContent"></div></div>
+  <div class="panel" id="panel-builder">
+    <div class="grid2">
+      <div>
+        <div class="section-header">
+          <div class="section-title">Telas criadas</div>
+          <button class="btn btn-primary btn-sm" onclick="openNewScreenModal()">+ Nova tela</button>
+        </div>
+        <div class="screen-list" id="builderScreenList"></div>
+      </div>
+      <div id="builderDetail"><div class="empty-state" style="padding-top:40px">Selecione uma tela para editar.</div></div>
+    </div>
+  </div>
+  <div class="panel" id="panel-users">
+    <div class="section-header"><div class="section-title">Gestão de usuários</div></div>
+    <div class="card" style="padding:0"><div id="userList"></div></div>
+  </div>
+</div>
+</div>
+
+<!-- MODAIS -->
+<div class="modal-overlay" id="masterModal">
+  <div class="modal">
+    <h3>Acesso Master</h3><p>Digite a senha para ativar o modo construtor.</p>
+    <label>Senha</label>
+    <input type="password" id="masterPwd" placeholder="Senha master..." onkeydown="if(event.key==='Enter')checkMaster()"/>
+    <div style="font-size:12px;color:var(--err);margin-top:6px;display:none" id="pwdErr">Senha incorreta.</div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('masterModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="checkMaster()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="newScreenModal">
+  <div class="modal">
+    <h3 id="newScreenModalTitle">Nova tela</h3><p>Escolha o tipo e dê um nome.</p>
+    <label>Tipo de tela</label>
+    <select id="newScreenType" onchange="updateScreenTypeHint()">
+      <option value="cadastro">Cadastro — lista base de dados</option>
+      <option value="formulario">Formulário — entrada de dados</option>
+      <option value="formulario-multi">Formulário multi-linha</option>
+    </select>
+    <div class="hint" id="screenTypeHint" style="margin-bottom:4px"></div>
+    <label>Nome da tela</label>
+    <input type="text" id="newScreenName" placeholder="Ex: Entrada de Nota Fiscal"/>
+    <div class="divider"></div>
+    <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Opções adicionais</div>
+    <div class="check-group">
+      <input type="checkbox" id="screenAllowImages" style="width:auto"/>
+      <label for="screenAllowImages"><strong>Permitir imagens</strong><span style="color:var(--text3);font-size:11px;display:block">O operador pode anexar fotos ao registrar.</span></label>
+    </div>
+    <div class="check-group" style="margin-top:10px">
+      <input type="checkbox" id="screenSendEmail" style="width:auto" onchange="toggleEmailConfig()"/>
+      <label for="screenSendEmail"><strong>Enviar e-mail ao registrar</strong><span style="color:var(--text3);font-size:11px;display:block">Notifica destinatários a cada novo registro.</span></label>
+    </div>
+    <div id="emailConfigSection" style="display:none;margin-top:8px">
+      <div style="background:var(--accent-l);border-radius:8px;padding:10px;font-size:12px;color:var(--accent-t);margin-bottom:8px">
+        <strong>📧 E-mail via Web3Forms</strong> — gratuito, sem servidor.<br>Cada destinatário confirma no primeiro e-mail.
+      </div>
+      <label>Destinatários (um por linha)</label>
+      <textarea id="screenEmailRecipients" rows="3" placeholder="email1@empresa.com&#10;email2@empresa.com" style="resize:vertical"></textarea>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('newScreenModal')">Cancelar</button>
+      <button class="btn btn-primary" id="newScreenSaveBtn" onclick="createOrRenameScreen()">Criar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="newFieldModal">
+  <div class="modal">
+    <h3 id="fieldModalTitle">Novo campo</h3>
+    <label>Nome</label><input type="text" id="newFieldName" placeholder="Ex: Quantidade"/>
+    <label>Tipo</label>
+    <select id="newFieldType" onchange="onFieldTypeChange()">
+      <option value="texto">Texto</option>
+      <option value="numero">Número</option>
+      <option value="moeda">Moeda (R$)</option>
+      <option value="percentual">Percentual (%)</option>
+      <option value="data">Data</option>
+      <option value="hora">Hora</option>
+      <option value="booleano">Sim / Não</option>
+      <option value="selecionavel">Selecionável (vínculo com cadastro)</option>
+      <option value="calculado">Calculado</option>
+    </select>
+    <div id="fieldLinkConfig" style="display:none">
+      <label>Vincular com cadastro</label>
+      <select id="fieldLinkTarget"></select>
+      <div style="background:var(--accent-l);border-radius:8px;padding:8px;margin-top:6px;font-size:12px;color:var(--accent-t)">Preenchimento automático ao selecionar um registro.</div>
+    </div>
+    <div id="fieldCalcConfig" style="display:none;margin-top:10px">
+      <div style="background:var(--purple-l);border-radius:8px;padding:8px;font-size:12px;color:var(--purple);margin-bottom:8px">Campo calculado automaticamente ao salvar.</div>
+      <label>Coluna A</label><select id="calcFieldA"></select>
+      <label>Operação</label>
+      <select id="calcOp">
+        <option value="+">A + B</option><option value="-">A − B</option>
+        <option value="*">A × B</option><option value="/">A ÷ B</option>
+      </select>
+      <label>Coluna B</label><select id="calcFieldB"></select>
+    </div>
+    <div class="divider" style="margin-top:14px"></div>
+    <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Comportamento</div>
+    <div class="check-group"><input type="checkbox" id="fieldRequired" style="width:auto"/><label for="fieldRequired">Obrigatório</label></div>
+    <div class="check-group" id="masterFieldRow">
+      <input type="checkbox" id="fieldIsMaster" style="width:auto" onchange="onMasterOrSumChange('master')"/>
+      <label for="fieldIsMaster"><strong>Campo mestre</strong><span style="color:var(--purple);font-size:11px;display:block">Coluna principal — identifica cada linha.</span></label>
+    </div>
+    <div class="check-group" id="uniqueFieldRow">
+      <input type="checkbox" id="fieldIsUnique" style="width:auto"/>
+      <label for="fieldIsUnique"><strong>Item único</strong><span style="color:var(--accent-t);font-size:11px;display:block">Bloqueia entradas duplicadas.</span></label>
+    </div>
+    <div class="check-group" id="sumFieldRow" style="display:none">
+      <input type="checkbox" id="fieldIsSum" style="width:auto" onchange="onMasterOrSumChange('sum')"/>
+      <label for="fieldIsSum"><strong>Campo de soma</strong><span style="color:var(--ok);font-size:11px;display:block">Acumula valores com resumo automático.</span></label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('newFieldModal')">Cancelar</button>
+      <button class="btn btn-primary" id="fieldSaveBtn" onclick="saveField()">Adicionar campo</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="newActionModal">
+  <div class="modal" style="width:480px">
+    <h3 id="actionModalTitle">Novo botão de ação</h3><p>Configure um comando para esta tabela.</p>
+    <label>Nome do botão</label><input type="text" id="actionBtnName" placeholder="Ex: Registrar Saída"/>
+    <label>Campo mestre</label>
+    <select id="actionMasterField"><option value="">Selecione...</option></select>
+    <div class="hint" style="margin-bottom:8px">Identifica a linha a transferir — não aparece no formulário de ação.</div>
+    <label>Tabela de destino</label>
+    <select id="actionTargetTable"><option value="__new__">Criar nova tabela automaticamente</option></select>
+    <div class="divider"></div>
+    <div class="section-title">Comportamento da tabela de origem</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px">
+      <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;margin:0">
+        <input type="radio" name="actionMode" id="actionModeFlow" value="flow" style="width:auto;margin-top:2px" checked/>
+        <span><strong>Fluxo (subtrai/remove)</strong><br><span style="font-size:11px;color:var(--text3)">Subtrai valor informado. Remove linha ao zerar. Bloqueia se ficaria negativo.</span></span>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:8px;cursor:pointer;margin:0">
+        <input type="radio" name="actionMode" id="actionModeHistory" value="history" style="width:auto;margin-top:2px"/>
+        <span><strong>Histórico (linha permanece)</strong><br><span style="font-size:11px;color:var(--text3)">Linha nunca é removida. Só ADM Master pode excluir.</span></span>
+      </label>
+    </div>
+    <div class="divider"></div>
+    <div class="section-title">Campos adicionais do formulário</div>
+    <div id="actionFieldsList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
+    <button class="btn btn-sm" onclick="addActionField()" style="width:100%">+ Campo ao formulário</button>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('newActionModal')">Cancelar</button>
+      <button class="btn btn-primary" id="actionSaveBtn" onclick="saveAction()">Criar botão</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="formModal">
+  <div class="modal">
+    <h3 id="formModalTitle">Preencher formulário</h3>
+    <p id="formModalSubtitle" style="font-size:12px;color:var(--text3)"></p>
+    <div id="formFields"></div>
+    <div id="formImgSection" style="display:none;margin-top:10px">
+      <div class="divider"></div>
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">📷 Imagens</div>
+      <div id="formImgPreviews" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
+      <label style="cursor:pointer">
+        <input type="file" id="formImgInput" accept="image/*" multiple style="display:none" onchange="handleImgUpload(this,'form')"/>
+        <span class="btn btn-sm">📷 Adicionar imagem</span>
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('formModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitForm()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="actionFormModal">
+  <div class="modal">
+    <h3 id="actionFormTitle">Executar ação</h3>
+    <p id="actionFormSubtitle" style="font-size:12px;color:var(--text3)"></p>
+    <div id="actionFormFields"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('actionFormModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitActionForm()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="multiFormModal">
+  <div class="modal" style="width:680px;max-width:98vw">
+    <h3 id="multiFormTitle">Registrar</h3>
+    <p id="multiFormSubtitle" style="font-size:12px;color:var(--text3);margin-bottom:12px"></p>
+    <div id="multiFormHeader"></div>
+    <div class="divider"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div style="font-size:12px;font-weight:600;color:var(--text2)">Linhas do registro</div>
+      <button class="btn btn-sm btn-primary" onclick="addMultiRow()">+ Linha</button>
+    </div>
+    <div id="multiFormRows" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div id="multiImgSection" style="display:none;margin-top:12px">
+      <div class="divider"></div>
+      <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">📷 Imagens</div>
+      <div id="multiImgPreviews" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px"></div>
+      <label style="cursor:pointer">
+        <input type="file" id="multiImgInput" accept="image/*" multiple style="display:none" onchange="handleImgUpload(this,'multi')"/>
+        <span class="btn btn-sm">📷 Adicionar imagem</span>
+      </label>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('multiFormModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="submitMultiForm()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="emailRecipientsModal">
+  <div class="modal" style="width:400px">
+    <h3>📧 Destinatários de E-mail</h3>
+    <p style="font-size:12px;color:var(--text2)">Lista global de e-mails para notificações de todos os formulários com envio ativo.</p>
+    <label>E-mails (um por linha)</label>
+    <textarea id="globalRecipientsInput" rows="5" placeholder="email1@empresa.com&#10;email2@empresa.com" style="resize:vertical"></textarea>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('emailRecipientsModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveEmailRecipients()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="imgViewerModal" onclick="closeModal('imgViewerModal')">
+  <div style="max-width:90vw;max-height:90vh;display:flex;align-items:center;justify-content:center">
+    <img id="imgViewerSrc" style="max-width:88vw;max-height:88vh;border-radius:10px;box-shadow:0 4px 32px rgba(0,0,0,.5)"/>
+  </div>
+</div>
+
+<div class="modal-overlay" id="addActionFieldModal">
+  <div class="modal" style="width:380px">
+    <h3>Campo adicional</h3>
+    <label>Nome</label><input type="text" id="aafName" placeholder="Ex: Motivo"/>
+    <label>Tipo</label>
+    <select id="aafType" onchange="onAafTypeChange()">
+      <option value="texto">Texto</option><option value="numero">Número</option>
+      <option value="moeda">Moeda (R$)</option><option value="percentual">Percentual (%)</option>
+      <option value="data">Data</option><option value="hora">Hora</option>
+      <option value="booleano">Sim / Não</option>
+      <option value="selecionavel">Selecionável</option>
+    </select>
+    <div id="aafLinkConfig" style="display:none">
+      <label>Vincular com cadastro</label><select id="aafLinkTarget"></select>
+    </div>
+    <div class="check-group"><input type="checkbox" id="aafRequired" style="width:auto"/><label for="aafRequired">Obrigatório</label></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('addActionFieldModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmActionField()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="renameTableModal">
+  <div class="modal" style="width:360px">
+    <h3>Renomear tabela</h3>
+    <label>Novo nome</label><input type="text" id="renameTableInput" placeholder="Nome da tabela"/>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('renameTableModal')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmRenameTable()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const S={
+  isMaster:false, currentRole:'operador', currentUser:null, currentUserData:null,
+  screens:[], records:{}, users:[], selectedScreen:null,
+  activeForm:null, activeAction:null, tempActionFields:[], nextId:100,
+  currentTableView:null, editingFieldIdx:null, editingScreenId:null,
+  renamingTableId:null, masterPwd:'LOG#001', unsubscribers:[],
+  sectionOpen:{formulario:true,tabela:true,'tabela-form':true,cadastro:false},
+  editingActionIdx:null,
+};
+let _multiRowCount=0, _multiImgs=[], _formImgs=[];
+const uid=()=>++S.nextId;
+
+// FIREBASE
+const FB={
+  auth:()=>window._fbAuth, db:()=>window._fbDb, fns:()=>window._fbFns,
+  async saveAll(){
+    try{ await this.fns().setDoc(this.fns().doc(this.db(),'app','config'),
+      {screens:S.screens,records:S.records,nextId:S.nextId,masterPwd:S.masterPwd});
+    }catch(e){console.error('saveAll',e)}
+  },
+  listenAll(cb){
+    const unsub=this.fns().onSnapshot(this.fns().doc(this.db(),'app','config'),snap=>{
+      if(snap.exists()){
+        const d=snap.data();
+        S.screens=d.screens||[]; S.records=d.records||{};
+        S.nextId=d.nextId||100; S.masterPwd=d.masterPwd||'LOG#001';
+        cb&&cb();
+      } else { this.saveAll(); cb&&cb(); }
+    },e=>console.error('listenAll',e));
+    S.unsubscribers.push(unsub); return unsub;
+  },
+  async saveUser(uid,data){
+    try{ await this.fns().setDoc(this.fns().doc(this.db(),'users',uid),data,{merge:true}); }
+    catch(e){console.error('saveUser',e)}
+  },
+  async getUser(uid){
+    try{ const s=await this.fns().getDoc(this.fns().doc(this.db(),'users',uid)); return s.exists()?s.data():null; }
+    catch(e){return null}
+  },
+  listenUsers(cb){
+    const unsub=this.fns().onSnapshot(this.fns().collection(this.db(),'users'),snap=>{
+      S.users=snap.docs.map(d=>({id:d.id,...d.data()})); cb&&cb();
+    });
+    S.unsubscribers.push(unsub); return unsub;
+  },
+};
+async function persist(fn){ fn&&await fn(); await FB.saveAll(); }
+
+// AUTH
+function switchAuthTab(tab){
+  const tabs=['login','cadastro','recover'], forms={login:'authLogin',cadastro:'authCadastro',recover:'authRecover'};
+  document.querySelectorAll('.auth-tab').forEach((t,i)=>t.classList.toggle('active',tabs[i]===tab));
+  document.querySelectorAll('.auth-form').forEach(f=>f.classList.remove('active'));
+  document.getElementById(forms[tab]).classList.add('active');
+}
+
+async function doLogin(){
+  const e=v('loginEmail'),p=v('loginPwd'),err=g('loginErr');
+  err.style.display='none';
+  try{ await window._fbFns.signInWithEmailAndPassword(window._fbAuth,e,p); }
+  catch(ex){ showErr(err,authMsg(ex.code)); }
+}
+async function doCadastro(){
+  const n=v('cadNome'),e=v('cadEmail'),p=v('cadPwd'),err=g('cadErr');
+  err.style.display='none';
+  if(!n||!e||!p){showErr(err,'Preencha todos os campos.');return;}
+  try{
+    const c=await window._fbFns.createUserWithEmailAndPassword(window._fbAuth,e,p);
+    await window._fbFns.updateProfile(c.user,{displayName:n});
+    await FB.saveUser(c.user.uid,{name:n,email:e,role:'operador',blocked:false});
+  }catch(ex){showErr(err,authMsg(ex.code));}
+}
+async function doRecover(){
+  const e=v('recoverEmail'),err=g('recoverErr'); err.style.display='none';
+  try{
+    await window._fbFns.sendPasswordResetEmail(window._fbAuth,e);
+    err.textContent='✓ Link enviado!'; err.style.color='var(--ok)';
+    err.style.background='var(--ok-l)'; err.style.display='block';
+  }catch(ex){showErr(err,authMsg(ex.code));}
+}
+async function doLogout(){ S.unsubscribers.forEach(u=>u&&u()); S.unsubscribers=[]; S.isMaster=false; await window._fbFns.signOut(window._fbAuth); }
+function showErr(el,msg){el.textContent=msg;el.style.display='block';}
+function authMsg(code){
+  return({
+    'auth/invalid-email':'E-mail inválido.','auth/user-not-found':'Usuário não encontrado.',
+    'auth/wrong-password':'Senha incorreta.','auth/email-already-in-use':'E-mail já cadastrado.',
+    'auth/weak-password':'Senha fraca (mín. 6 car.)','auth/too-many-requests':'Muitas tentativas.',
+    'auth/invalid-credential':'E-mail ou senha incorretos.',
+  })[code]||'Erro: '+code;
+}
+
+// INIT
+window.addEventListener('firebaseReady',()=>{
+  window._fbFns.onAuthStateChanged(window._fbAuth,async user=>{
+    if(user){
+      S.currentUser=user;
+      let ud=await FB.getUser(user.uid);
+      if(!ud){ud={name:user.displayName||user.email,email:user.email,role:'operador',blocked:false};await FB.saveUser(user.uid,ud);}
+      S.currentUserData=ud;
+      if(ud.blocked){await window._fbFns.signOut(window._fbAuth);showErr(g('loginErr'),'Conta bloqueada.');return;}
+      g('authScreen').style.display='none'; g('mainApp').style.display='block';
+      FB.listenAll(()=>{
+        renderHome(); updateStats();
+        if(S.currentTableView) renderTableView();
+        if(g('panel-builder').classList.contains('active')) renderBuilderList();
+      });
+      FB.listenUsers(()=>{ if(g('panel-users').classList.contains('active')) renderUsers(); });
+      loadGlobalRecipients();
+      S.currentRole=ud.role||'operador';
+      updateUI(); renderHome(); updateStats();
+    } else {
+      S.currentUser=S.currentUserData=null; S.isMaster=false;
+      g('authScreen').style.display='flex'; g('mainApp').style.display='none';
+    }
+  });
+});
+
+// NAV
+function showPanel(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  g('panel-'+id).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+  else document.querySelectorAll('.nav-tab').forEach(t=>{if(t.dataset.panel===id)t.classList.add('active');});
+  if(id==='builder') renderBuilderList();
+  if(id==='users') renderUsers();
+  if(id==='home') renderHome();
+}
+function openTableView(tableId){ S.currentTableView=tableId; renderTableView(); showPanel('tableview'); document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active')); }
+
+// TABLE VIEW
+function renderTableView(){
+  const tableId=S.currentTableView, screen=S.screens.find(s=>s.id===tableId);
+  if(!screen){g('tableViewContent').innerHTML='';return;}
+  const recs=S.records[tableId]||[], actions=screen.actions||[], allCols=getAllColumns(screen);
+  const sumFields=(screen.fields||[]).filter(f=>f.isSum), masterField=(screen.fields||[]).find(f=>f.isMaster);
+  let h=`<div class="table-view-container">
+    <div class="table-view-header">
+      <button class="back-btn" onclick="showPanel('home')">← Voltar</button>
+      <div class="table-view-title">${esc(screen.name)}</div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+        <button class="btn btn-sm" onclick="exportTable(${tableId},'csv')">⬇ CSV</button>
+        <button class="btn btn-sm" onclick="exportTable(${tableId},'xls')">⬇ XLS</button>
+        ${S.isMaster?`<button class="btn btn-sm btn-warning" onclick="document.getElementById('importFileInput_${tableId}').click()">⬆ Importar</button>
+          <input type="file" id="importFileInput_${tableId}" accept=".xlsx,.xls,.csv" style="display:none" onchange="importTable(${tableId},this)"/>
+          <button class="btn btn-sm" onclick="openRenameTable(${tableId})">✎ Renomear</button>`:''}
+      </div>
+    </div>`;
+  if(actions.length){
+    h+=`<div class="table-action-buttons">`;
+    actions.forEach((a,ai)=>h+=`<button class="cmd-btn" onclick="openActionForm(${tableId},${ai})">▶ ${esc(a.name)}</button>`);
+    h+=`</div>`;
+  }
+  if(!recs.length){h+=`<div class="empty-state">Nenhum registro.</div>`;}
+  else{
+    h+=`<div class="table-wrap"><table><thead><tr>`;
+    allCols.forEach(c=>h+=`<th>${esc(colLabel(c))}</th>`);
+    if(S.isMaster) h+=`<th></th>`;
+    h+=`</tr></thead><tbody>`;
+    recs.forEach((r,ri)=>{
+      h+=`<tr>`;
+      allCols.forEach(c=>{
+        const val=r[c]||'—';
+        if(c==='_images'&&val!=='—'){
+          try{h+=`<td>${JSON.parse(val).map(src=>`<img class="img-thumb" src="${src}" onclick="event.stopPropagation();g('imgViewerSrc').src='${src}';g('imgViewerModal').classList.add('open')" style="width:40px;height:40px;object-fit:cover;border-radius:4px;cursor:pointer;margin-right:2px"/>`).join('')}</td>`;}
+          catch{h+=`<td>${esc(val)}</td>`;}
+        } else h+=`<td>${esc(val)}</td>`;
+      });
+      if(S.isMaster) h+=`<td><button class="btn btn-sm btn-danger" onclick="deleteRecord(${tableId},${ri})">×</button></td>`;
+      h+=`</tr>`;
+    });
+    if(sumFields.length&&masterField){
+      h+=`<tr class="sum-total-row">`;
+      allCols.forEach(col=>{
+        const sf=sumFields.find(f=>f.name===col);
+        if(sf){const tot=recs.reduce((a,r)=>a+parseRawNum(r[col]),0); h+=`<td><strong>Σ ${fmtField(sf,tot)}</strong></td>`;}
+        else h+=`<td>${col===masterField.name?'<strong>TOTAL</strong>':''}</td>`;
+      });
+      if(S.isMaster) h+=`<td></td>`;
+      h+=`</tr>`;
+    }
+    h+=`</tbody></table></div>`;
+  }
+  if(sumFields.length&&masterField&&recs.length){
+    const grouped={};
+    recs.forEach(r=>{const k=r[masterField.name]||'(sem valor)';if(!grouped[k])grouped[k]={};sumFields.forEach(sf=>{grouped[k][sf.name]=(grouped[k][sf.name]||0)+parseRawNum(r[sf.name]);});});
+    h+=`<div style="margin-top:16px"><div class="section-title" style="padding:0 4px;margin-bottom:8px">Resumo por ${esc(masterField.name)}</div>
+      <div class="table-wrap"><table><thead><tr><th>${esc(masterField.name)}</th>${sumFields.map(f=>`<th>${esc(f.name)} (Σ)</th>`).join('')}</tr></thead><tbody>`;
+    Object.entries(grouped).forEach(([k,s])=>{h+=`<tr><td><strong>${esc(k)}</strong></td>${sumFields.map(sf=>`<td>${fmtField(sf,s[sf.name]||0)}</td>`).join('')}</tr>`;});
+    h+=`</tbody></table></div></div>`;
+  }
+  h+=`</div>`;
+  g('tableViewContent').innerHTML=h;
+}
+
+function getAllColumns(screen){
+  const formCols=(screen.fields||[]).map(f=>f.name);
+  const recs=S.records[screen.id]||[];
+  if(!recs.length) return [...formCols,'_data','_hora','_usuario'];
+  const allKeys=new Set(); recs.forEach(r=>Object.keys(r).forEach(k=>allKeys.add(k)));
+  const auditRx=/^_(data|hora|usuario)(_\d+)?$/;
+  const extraCols=[...allKeys].filter(k=>!formCols.includes(k)&&!auditRx.test(k));
+  const auditByStep={};
+  [...allKeys].filter(k=>auditRx.test(k)).forEach(k=>{const m=k.match(/^_(data|hora|usuario)(_(\d+))?$/);const step=m[3]?parseInt(m[3]):1;auditByStep[step]=auditByStep[step]||[];auditByStep[step].push(k);});
+  const ord=['data','hora','usuario'];
+  Object.values(auditByStep).forEach(a=>a.sort((a,b)=>ord.findIndex(x=>a.includes(x))-ord.findIndex(x=>b.includes(x))));
+  const steps=Object.keys(auditByStep).map(Number).sort((a,b)=>a-b);
+  const cols=[...formCols];
+  if(steps.length){
+    cols.push(...(auditByStep[steps[0]]||[]));
+    if(steps.length>1){
+      extraCols.forEach(c=>{if(!cols.includes(c))cols.push(c);});
+      for(let i=1;i<steps.length;i++) cols.push(...(auditByStep[steps[i]]||[]));
+    } else extraCols.forEach(c=>{if(!cols.includes(c))cols.push(c);});
+  } else {
+    extraCols.forEach(c=>{if(!cols.includes(c))cols.push(c);});
+    ['_data','_hora','_usuario'].forEach(k=>{if(!cols.includes(k))cols.push(k);});
+  }
+  return cols;
+}
+
+function colLabel(col){
+  if(col==='_images') return '📷 Imagens';
+  const m=col.match(/^_(data|hora|usuario)(_(\d+))?$/); if(!m) return col;
+  const step=m[3]?parseInt(m[3]):1, base=m[1]==='data'?'Data':m[1]==='hora'?'Hora':'Usuário';
+  return step===1?base:`${base} (etapa ${step})`;
+}
+
+function deleteRecord(tableId,ri){
+  if(!confirm('Remover este registro?')) return;
+  S.records[tableId].splice(ri,1);
+  persist(null).then(()=>{renderTableView();updateStats();renderHome();});
+}
+
+// EXPORT / IMPORT
+function exportTable(tableId,fmt){
+  const screen=S.screens.find(s=>s.id===tableId); if(!screen) return;
+  const recs=S.records[tableId]||[], cols=getAllColumns(screen).filter(c=>c!=='_images'), headers=cols.map(colLabel);
+  const sumFields=(screen.fields||[]).filter(f=>f.isSum), masterField=(screen.fields||[]).find(f=>f.isMaster);
+  let summaryData=null;
+  if(sumFields.length&&masterField&&recs.length){
+    const grouped={};
+    recs.forEach(r=>{const k=r[masterField.name]||'(sem valor)';if(!grouped[k])grouped[k]={};sumFields.forEach(sf=>{grouped[k][sf.name]=(grouped[k][sf.name]||0)+parseRawNum(r[sf.name]);});});
+    summaryData={headers:[masterField.name,...sumFields.map(f=>f.name)],rows:Object.entries(grouped).map(([k,v])=>([k,...sumFields.map(sf=>fmtField(sf,v[sf.name]||0))]))};
+  }
+  if(fmt==='csv'){
+    const rows=[headers.join(','),...recs.map(r=>cols.map(c=>JSON.stringify(r[c]||'')).join(','))];
+    dlBlob(new Blob(['\uFEFF'+rows.join('\r\n')],{type:'text/csv;charset=utf-8'}),screen.name+'.csv');
+    if(summaryData) setTimeout(()=>{
+      const r2=[summaryData.headers.join(','),...summaryData.rows.map(r=>r.map(c=>JSON.stringify(c||'')).join(','))];
+      dlBlob(new Blob(['\uFEFF'+r2.join('\r\n')],{type:'text/csv;charset=utf-8'}),screen.name+' — Resumo.csv');
+    },400);
+  } else {
+    let t1='<table border="1"><thead><tr>'+headers.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>'+recs.map(r=>'<tr>'+cols.map(c=>`<td>${r[c]||''}</td>`).join('')+'</tr>').join('')+'</tbody></table>';
+    let s2=summaryData?`<br><br><b>Resumo por ${esc(masterField.name)}</b><br><table border="1"><thead><tr>${summaryData.headers.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${summaryData.rows.map(r=>'<tr>'+r.map(c=>`<td>${c}</td>`).join('')+'</tr>').join('')}</tbody></table>`:'';
+    const html=`<html xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel"><head><meta charset="UTF-8"></head><body>${t1}${s2}</body></html>`;
+    dlBlob(new Blob([html],{type:'application/vnd.ms-excel;charset=utf-8'}),screen.name+'.xls');
+  }
+  showToast('Exportado!','success');
+}
+function dlBlob(blob,name){const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);}
+
+async function importTable(tableId,inputEl){
+  const screen=S.screens.find(s=>s.id===tableId); if(!screen||!inputEl.files.length) return;
+  const file=inputEl.files[0]; inputEl.value='';
+  if(file.name.split('.').pop().toLowerCase()!=='csv'){showToast('Use .csv (salve como CSV no Excel)','info');return;}
+  const text=await file.text(), lines=text.replace(/\r/g,'').split('\n').filter(Boolean);
+  const cols=getAllColumns(screen).filter(c=>!/^_(data|hora|usuario)/.test(c));
+  const now=new Date(), audit={_data:now.toLocaleDateString('pt-BR'),_hora:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),_usuario:(S.currentUserData?.name||'Importação')};
+  let count=0;
+  lines.slice(1).forEach(l=>{
+    const vals=[]; let cur='',inQ=false;
+    for(const ch of l){if(ch==='"'){inQ=!inQ;}else if(ch===','&&!inQ){vals.push(cur.trim());cur='';}else cur+=ch;}
+    vals.push(cur.trim());
+    if(!vals.some(Boolean)) return;
+    const rec={}; cols.forEach((c,i)=>{rec[c]=vals[i]||'';});
+    Object.assign(rec,audit); S.records[tableId].push(rec); count++;
+  });
+  await FB.saveAll(); renderTableView(); updateStats(); renderHome();
+  showToast(`${count} registros importados!`,'success');
+}
+
+// RENAME TABLE
+function openRenameTable(tableId){
+  const s=S.screens.find(x=>x.id===tableId); if(!s) return;
+  S.renamingTableId=tableId; g('renameTableInput').value=s.name; g('renameTableModal').classList.add('open');
+}
+async function confirmRenameTable(){
+  const n=v('renameTableInput'); if(!n){showToast('Digite um nome','danger');return;}
+  const s=S.screens.find(x=>x.id===S.renamingTableId); if(s) s.name=n;
+  await FB.saveAll(); closeModal('renameTableModal'); renderTableView(); renderBuilderList(); renderHome();
+  showToast('Renomeado!','success');
+}
+
+// MASTER
+function toggleMaster(){
+  if(S.isMaster){S.isMaster=false;updateUI();showToast('Modo master desativado','success');}
+  else{g('masterPwd').value='';g('pwdErr').style.display='none';g('masterModal').classList.add('open');setTimeout(()=>g('masterPwd').focus(),100);}
+}
+function checkMaster(){
+  if(g('masterPwd').value===S.masterPwd){S.isMaster=true;closeModal('masterModal');updateUI();showToast('ADM Master ativado!','success');}
+  else g('pwdErr').style.display='block';
+}
+function updateUI(){
+  const mb=g('masterBtn'), rb=g('roleBadge');
+  const roleLabel=S.isMaster?'ADM Master':S.currentUserData?.role==='adm_basico'?'ADM Básico':S.currentUserData?.role==='visualizador'?'Visualizador':'Operador';
+  if(S.isMaster){mb.classList.add('active');rb.className='role-badge role-master';rb.textContent='ADM Master';g('tabBuilder').classList.remove('hidden');g('tabUsers').classList.remove('hidden');}
+  else{mb.classList.remove('active');rb.className='role-badge role-operator';rb.textContent=roleLabel;g('tabBuilder').classList.add('hidden');g('tabUsers').classList.add('hidden');}
+  renderHome(); if(S.currentTableView) renderTableView();
+}
+
+// HOME
+function toggleSection(key){S.sectionOpen[key]=!S.sectionOpen[key];renderHome();}
+function renderHome(){
+  updateStats();
+  const el=g('homeContent');
+  const cadastros=S.screens.filter(s=>s.type==='cadastro');
+  const formularios=S.screens.filter(s=>s.type==='formulario');
+  const tabelas=S.screens.filter(s=>s.type==='tabela'&&s.linkedFormId);
+  const tabelasAcao=S.screens.filter(s=>s.type==='tabela-form');
+  if(!cadastros.length&&!formularios.length&&!tabelas.length&&!tabelasAcao.length){
+    el.innerHTML=`<div class="empty-state" style="padding:48px 20px"><div style="font-size:32px;margin-bottom:12px">📋</div><div style="font-weight:500;color:var(--text2);margin-bottom:6px">Nenhuma tela criada</div><div style="font-size:12px">O ADM Master deve criar a estrutura no Construtor.</div></div>`;
+    return;
+  }
+  const iconMap={cadastro:'🗂️',formulario:'📝',tabela:'📊','tabela-form':'🔄'};
+  const labelMap={cadastro:'Cadastro',formulario:'Formulário',tabela:'Tabela','tabela-form':'Tabela de Fluxo'};
+  const makeCard=(s,onClick,t)=>{const cnt=(S.records[s.id]||[]).length;return`<div class="home-card" onclick="${onClick}" title="${esc(s.name)}"><div class="home-card-icon type-${t}-icon">${iconMap[t]||'📄'}</div><div class="home-card-body"><div class="home-card-name">${esc(s.name)}</div><div class="home-card-meta"><span class="screen-type-badge type-${t}">${labelMap[t]||t}</span><span class="home-card-count">${cnt} registro${cnt!==1?'s':''}</span></div></div><div class="home-card-arrow">›</div></div>`;};
+  const makeSection=(key,icon,title,items,cardFn)=>{
+    if(!items.length) return '';
+    const open=S.sectionOpen[key]!==false;
+    return`<div class="home-section"><div class="home-section-header" onclick="toggleSection('${key}')" style="cursor:pointer;user-select:none"><span>${icon}</span><span>${title}</span><span class="home-section-count">${items.length}</span><span style="margin-left:auto;font-size:14px;transition:transform .2s;display:inline-block;transform:rotate(${open?'0':'180'}deg)">⌃</span></div>${open?`<div class="home-cards">${items.map(cardFn).join('')}</div>`:''}</div>`;
+  };
+  el.innerHTML=
+    makeSection('formulario','📝','Formulários de Entrada',formularios,s=>makeCard(s,`openFormModal(${s.id})`,'formulario'))+
+    makeSection('tabela','📊','Tabelas de Resultados',[...tabelas,...tabelasAcao],s=>makeCard(s,`openTableView(${s.id})`,s.type))+
+    makeSection('cadastro','🗂️','Cadastros',cadastros,s=>makeCard(s,`openFormModal(${s.id})`,'cadastro'));
+}
+
+// SCREEN CRUD
+function openNewScreenModal(){
+  S.editingScreenId=null;
+  g('newScreenModalTitle').textContent='Nova tela';g('newScreenSaveBtn').textContent='Criar';
+  g('newScreenName').value='';g('newScreenType').value='cadastro';g('newScreenType').disabled=false;
+  g('screenAllowImages').checked=false;g('screenSendEmail').checked=false;
+  g('emailConfigSection').style.display='none';g('screenEmailRecipients').value='';
+  updateScreenTypeHint(); g('newScreenModal').classList.add('open');
+}
+function openRenameScreen(screenId,e){
+  if(e) e.stopPropagation();
+  const s=S.screens.find(x=>x.id===screenId); if(!s) return;
+  S.editingScreenId=screenId;
+  g('newScreenModalTitle').textContent='Renomear tela';g('newScreenSaveBtn').textContent='Salvar';
+  g('newScreenName').value=s.name;g('newScreenType').value=s.type;g('newScreenType').disabled=true;
+  g('newScreenModal').classList.add('open');
+}
+function updateScreenTypeHint(){
+  const hints={cadastro:'Tela de referência para outros formulários.',formulario:'Entrada de dados — tabela criada automaticamente.','formulario-multi':'Campos fixos + linhas repetíveis (ex: itens de NF).'};
+  g('screenTypeHint').textContent=hints[v('newScreenType')]||'';
+}
+function toggleEmailConfig(){g('emailConfigSection').style.display=g('screenSendEmail').checked?'block':'none';}
+
+async function createOrRenameScreen(){
+  const name=v('newScreenName'); if(!name){showToast('Digite um nome','danger');return;}
+  if(S.editingScreenId){
+    const s=S.screens.find(x=>x.id===S.editingScreenId); if(s) s.name=name;
+    await FB.saveAll(); closeModal('newScreenModal'); renderBuilderList(); renderBuilderDetail(); renderHome();
+    showToast('Renomeado!','success'); return;
+  }
+  const type=v('newScreenType'), isMulti=type==='formulario-multi', realType=isMulti?'formulario':type;
+  const allowImages=g('screenAllowImages').checked, sendEmail=g('screenSendEmail').checked;
+  const emailRecipients=sendEmail?g('screenEmailRecipients').value.split('\n').map(s=>s.trim()).filter(Boolean):[];
+  const screen={id:uid(),name,type:realType,isMulti,fields:[],multiFields:[],linkedTableId:null,linkedFormId:null,actions:[],allowImages,sendEmail,emailRecipients};
+  S.screens.push(screen); S.records[screen.id]=[];
+  if(realType==='formulario'||isMulti){
+    const table={id:uid(),name:name+' — Tabela',type:'tabela',linkedFormId:screen.id,fields:[],actions:[]};
+    S.screens.push(table); S.records[table.id]=[]; screen.linkedTableId=table.id;
+  }
+  await FB.saveAll(); closeModal('newScreenModal'); renderBuilderList(); renderHome(); updateStats();
+  showToast('Tela criada!','success');
+}
+
+// BUILDER
+function selectBuilderScreen(id){S.selectedScreen=id;renderBuilderList();renderBuilderDetail();}
+function renderBuilderList(){
+  const el=g('builderScreenList');
+  if(!S.screens.length){el.innerHTML='<div class="empty-state">Nenhuma tela.</div>';return;}
+  el.innerHTML=S.screens.map(s=>`
+    <div class="screen-item${S.selectedScreen===s.id?' selected':''}" onclick="selectBuilderScreen(${s.id})">
+      <span class="screen-type-badge type-${s.type}">${s.type==='tabela-form'?'tabela-ação':s.type}</span>
+      <span class="screen-name">${esc(s.name)}</span>
+      <div class="screen-actions">
+        <button class="btn btn-sm btn-ghost" onclick="openRenameScreen(${s.id},event)">✎</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteScreen(${s.id},event)">×</button>
+      </div>
+    </div>`).join('');
+}
+async function deleteScreen(id,e){
+  e.stopPropagation();
+  if(!confirm('Excluir esta tela e todos os dados?')) return;
+  const s=S.screens.find(x=>x.id===id); if(!s) return;
+  const del=[id];
+  if(s.linkedTableId) del.push(s.linkedTableId);
+  (s.actions||[]).forEach(a=>{if(a.targetTableId)del.push(a.targetTableId);});
+  S.screens.filter(x=>x.linkedFormId===id).forEach(x=>{(x.actions||[]).forEach(a=>{if(a.targetTableId)del.push(a.targetTableId);});del.push(x.id);});
+  S.screens=S.screens.filter(x=>!del.includes(x.id));
+  del.forEach(tid=>delete S.records[tid]);
+  if(del.includes(S.selectedScreen)) S.selectedScreen=null;
+  await FB.saveAll(); renderBuilderList(); renderBuilderDetail(); renderHome(); updateStats();
+  showToast('Tela removida','danger');
+}
+
+function renderBuilderDetail(){
+  const el=g('builderDetail');
+  if(!S.selectedScreen){el.innerHTML='<div class="empty-state" style="padding-top:40px">Selecione uma tela.</div>';return;}
+  const screen=S.screens.find(s=>s.id===S.selectedScreen);
+  if(!screen){el.innerHTML='';return;}
+  if(screen.isMulti){renderBuilderDetailMulti(screen);return;}
+  const isTabela=screen.type==='tabela'||screen.type==='tabela-form';
+  const linkedForm=screen.linkedFormId?S.screens.find(s=>s.id===screen.linkedFormId):null;
+  let h=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><div class="card-title" style="flex:1">${esc(screen.name)}</div><button class="btn btn-sm btn-ghost" onclick="openRenameScreen(${screen.id})">✎</button></div>
+    <div style="display:flex;gap:6px;margin-bottom:14px">
+      <span class="screen-type-badge type-${screen.type}">${screen.type==='tabela-form'?'tabela-ação':screen.type}</span>
+      ${screen.linkedTableId?`<span style="font-size:11px;color:var(--text3)">→ gera tabela automaticamente</span>`:''}
+      ${linkedForm?`<span style="font-size:11px;color:var(--text3)">← gerada por "${esc(linkedForm.name)}"</span>`:''}
+    </div>`;
+  if(isTabela){
+    h+=`<div class="hint" style="margin-bottom:10px">Campos espelhados do formulário de origem.</div>`;
+    if(screen.fields.length) h+=`<div class="field-list">${screen.fields.map(f=>`<div class="field-item"><span class="field-name">${esc(f.name)}</span><span class="field-type-tag">${f.type}</span>${f.isMaster?`<span class="field-master-tag">mestre</span>`:''}${f.isSum?`<span class="field-sum-tag">soma</span>`:''}</div>`).join('')}</div>`;
+    h+=`<div class="divider"></div><div class="builder-section"><div class="builder-section-title">Botões de ação</div><div class="action-list">`;
+    const acts=screen.actions||[];
+    if(!acts.length) h+=`<div style="font-size:12px;color:var(--text3);padding:8px 0">Nenhum botão.</div>`;
+    else acts.forEach((a,ai)=>{
+      const t=S.screens.find(s=>s.id===a.targetTableId);
+      h+=`<div class="action-item"><span class="action-item-name">▶ ${esc(a.name)}</span><span class="action-item-detail">→ ${esc(t?t.name:'?')}</span><span style="font-size:10px;padding:2px 6px;border-radius:4px;${a.actionMode==='history'?'background:var(--ok-l);color:var(--ok)':'background:var(--warn-l);color:var(--warn)'}">${a.actionMode==='history'?'histórico':'fluxo'}</span><button class="btn btn-sm btn-ghost" onclick="openEditActionModal(${screen.id},${ai})">✎</button><button class="btn btn-sm btn-danger" onclick="deleteAction(${screen.id},${ai})">×</button></div>`;
+    });
+    h+=`</div><button class="btn btn-sm btn-primary" style="margin-top:8px;width:100%" onclick="openNewActionModal(${screen.id})">+ Novo botão de ação</button></div>`;
+  } else {
+    h+=`<div class="section-header" style="margin-top:4px"><span class="section-title">Campos</span><button class="btn btn-sm btn-primary" onclick="openFieldModal(${screen.id},null)">+ Campo</button></div>
+      <div class="field-list">${renderFieldList(screen)}</div>`;
+    if(screen.type==='formulario'){
+      h+=`<div class="divider"></div><div class="section-title" style="margin-bottom:8px">Fluxo de dados</div>
+        <div style="display:flex;align-items:center;gap:8px;font-size:12px">
+          <span style="padding:4px 8px;background:var(--accent-l);color:var(--accent-t);border-radius:5px">${esc(screen.name)}</span>
+          <span style="color:var(--text3)">→</span>
+          <select style="width:auto;flex:1" onchange="setFlowTarget(${screen.id},this.value)">
+            <option value="">Tabela padrão</option>
+            ${S.screens.filter(s=>s.type==='tabela'||s.type==='tabela-form').map(s=>`<option value="${s.id}" ${screen.flowTarget===s.id?'selected':''}>${esc(s.name)}</option>`).join('')}
+          </select>
+        </div>`;
+    }
+  }
+  el.innerHTML=h;
+}
+
+function renderFieldList(screen){
+  if(!screen.fields.length) return '<div class="empty-state" style="padding:16px">Nenhum campo.</div>';
+  return screen.fields.map((f,i)=>`<div class="field-item"><span class="field-name">${esc(f.name)}</span><span class="field-type-tag">${f.type}</span>${f.isMaster?`<span class="field-master-tag">★ mestre</span>`:''}${(!f.isMaster&&f.isUnique)?`<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--accent-l);color:var(--accent-t)">único</span>`:''}${f.isSum?`<span class="field-sum-tag">Σ soma</span>`:''}${f.type==='selecionavel'&&f.linkTarget?`<span class="field-link">→ ${esc(S.screens.find(s=>s.id===f.linkTarget)?.name||'?')}</span>`:''}${f.required?'<span class="required-badge">obrigatório</span>':''}${S.isMaster?`<button class="btn btn-sm btn-ghost" onclick="openFieldModal(${screen.id},${i})">✎</button><button class="btn btn-sm btn-danger" onclick="removeField(${screen.id},${i})">×</button>`:''}</div>`).join('');
+}
+
+async function setFlowTarget(screenId,val){const s=S.screens.find(x=>x.id===screenId);if(s)s.flowTarget=val?parseInt(val):null;await FB.saveAll();}
+
+// MULTI BUILDER
+function renderBuilderDetailMulti(screen){
+  g('builderDetail').innerHTML=`
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px"><div class="card-title" style="flex:1">${esc(screen.name)}</div><button class="btn btn-sm btn-ghost" onclick="openRenameScreen(${screen.id})">✎</button></div>
+    <div style="display:flex;gap:6px;margin-bottom:14px"><span class="screen-type-badge type-formulario">multi-linha</span><span style="font-size:11px;color:var(--text3)">→ gera tabela automaticamente</span></div>
+    <div class="section-header"><span class="section-title">Campos do cabeçalho</span><button class="btn btn-sm btn-primary" onclick="openFieldModal(${screen.id},null)">+ Campo</button></div>
+    <div class="hint" style="margin-bottom:8px">Campos únicos por registro (ex: número NF, fornecedor).</div>
+    <div class="field-list">${renderFieldList(screen)}</div>
+    <div class="divider"></div>
+    <div class="section-header"><span class="section-title">Campos de linha (repetíveis)</span><button class="btn btn-sm btn-primary" onclick="openMultiFieldModal(${screen.id},null)">+ Campo de linha</button></div>
+    <div class="hint" style="margin-bottom:8px">Campos que se repetem por item (ex: código, quantidade).</div>
+    <div class="field-list">${renderMultiFieldList(screen)}</div>`;
+}
+
+function renderMultiFieldList(screen){
+  const mf=screen.multiFields||[];
+  if(!mf.length) return '<div class="empty-state" style="padding:16px">Nenhum campo de linha.</div>';
+  return mf.map((f,i)=>`<div class="field-item"><span class="field-name">${esc(f.name)}</span><span class="field-type-tag">${f.type}</span>${f.required?'<span class="required-badge">obrigatório</span>':''}${S.isMaster?`<button class="btn btn-sm btn-ghost" onclick="openMultiFieldModal(${screen.id},${i})">✎</button><button class="btn btn-sm btn-danger" onclick="removeMultiField(${screen.id},${i})">×</button>`:''}</div>`).join('');
+}
+
+function openMultiFieldModal(screenId,fieldIdx){
+  S.activeForm={screenId,isMultiField:true}; S.editingFieldIdx=fieldIdx;
+  const screen=S.screens.find(s=>s.id===screenId), isEdit=fieldIdx!=null, field=isEdit?(screen.multiFields||[])[fieldIdx]:null;
+  g('fieldModalTitle').textContent=isEdit?'Editar campo de linha':'Novo campo de linha';
+  g('fieldSaveBtn').textContent=isEdit?'Salvar':'Adicionar';
+  g('newFieldName').value=field?field.name:''; g('newFieldType').value=field?field.type:'texto';
+  g('fieldRequired').checked=field?!!field.required:false; g('fieldIsMaster').checked=false;
+  g('fieldIsUnique').checked=false; g('fieldIsSum').checked=field?!!field.isSum:false;
+  onFieldTypeChange();
+  g('fieldLinkTarget').innerHTML=S.screens.filter(s=>s.type==='cadastro').map(s=>`<option value="${s.id}" ${field&&field.linkTarget===s.id?'selected':''}>${esc(s.name)}</option>`).join('');
+  g('newFieldModal').classList.add('open');
+}
+async function removeMultiField(screenId,idx){
+  if(!confirm('Remover campo?')) return;
+  S.screens.find(s=>s.id===screenId).multiFields.splice(idx,1);
+  await FB.saveAll(); renderBuilderDetail();
+}
+
+// MULTI FORM
+function openMultiFormModal(screenId){
+  const screen=S.screens.find(s=>s.id===screenId); if(!screen) return;
+  S.activeForm={screenId}; _multiRowCount=0; _multiImgs=[];
+  g('multiFormTitle').textContent=screen.name;
+  g('multiFormSubtitle').textContent='Preencha o cabeçalho e adicione as linhas necessárias.';
+  g('multiFormHeader').innerHTML=screen.fields.map((f,i)=>`<label>${esc(f.name)}${f.isMaster?'<span class="field-master-tag" style="font-size:10px;margin-left:4px">★</span>':''}${f.required?'<span class="required-badge" style="margin-left:4px">*</span>':''}</label>${buildFieldInput(f,'mhdr_'+i,'',screenId)}`).join('');
+  g('multiFormRows').innerHTML='';
+  g('multiImgSection').style.display=screen.allowImages?'block':'none';
+  g('multiImgPreviews').innerHTML='';
+  addMultiRow(); g('multiFormModal').classList.add('open');
+}
+
+function addMultiRow(){
+  const screen=S.screens.find(s=>s.id===S.activeForm.screenId), mf=screen.multiFields||[];
+  if(!mf.length){showToast('Configure campos de linha no Construtor.','danger');return;}
+  const ri=_multiRowCount++, rowEl=document.createElement('div');
+  rowEl.className='multi-row'; rowEl.id='multirow_'+ri;
+  rowEl.innerHTML=`<div class="multi-row-header"><span style="font-size:12px;font-weight:500;color:var(--text2)">Linha ${ri+1}</span>${ri>0?`<button class="btn btn-sm btn-danger" style="padding:2px 8px" onclick="removeMultiRow(${ri})">×</button>`:''}</div><div class="multi-row-fields">${mf.map((f,fi)=>`<div class="multi-row-field"><label style="margin-top:0">${esc(f.name)}${f.required?'<span class="required-badge" style="margin-left:4px">*</span>':''}</label>${buildFieldInput(f,`mrow_${ri}_${fi}`,'',S.activeForm.screenId)}</div>`).join('')}</div>`;
+  g('multiFormRows').appendChild(rowEl);
+}
+function removeMultiRow(ri){const el=g('multirow_'+ri);if(el)el.remove();}
+
+async function submitMultiForm(){
+  const screen=S.screens.find(s=>s.id===S.activeForm.screenId); if(!screen) return;
+  const mf=screen.multiFields||[], now=new Date();
+  // unicidade
+  const ufs=screen.fields.filter(f=>f.isUnique), target=(S.records[screen.linkedTableId||screen.id]||[]);
+  for(const uf of ufs){
+    const idx=screen.fields.indexOf(uf), el=g('mhdr_'+idx), val=el?el.value.trim():'';
+    if(val&&target.some(r=>r[uf.name]===val)){showToast(`"${uf.name}" já existe.`,'danger');return;}
+  }
+  const header={};
+  for(let i=0;i<screen.fields.length;i++){
+    const f=screen.fields[i]; if(f.type==='calculado') continue;
+    const el=g('mhdr_'+i); if(!el) continue;
+    let val=el.value;
+    if(f.type==='moeda'&&val) val='R$ '+parseFloat(val).toFixed(2).replace('.',',');
+    if(f.type==='percentual'&&val) val=parseFloat(val).toFixed(2)+'%';
+    if(f.required&&!val){showToast(`"${f.name}" é obrigatório`,'danger');return;}
+    header[f.name]=val;
+  }
+  const rowEls=document.querySelectorAll('#multiFormRows .multi-row');
+  if(!rowEls.length){showToast('Adicione ao menos uma linha.','danger');return;}
+  const audit={_data:now.toLocaleDateString('pt-BR'),_hora:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),_usuario:S.currentUserData?.name||S.currentUser?.email||'—'};
+  const firstImgs=_multiImgs.length?{_images:JSON.stringify([..._multiImgs])}:{};
+  const records=[];
+  for(const rowEl of rowEls){
+    const ri=parseInt(rowEl.id.replace('multirow_','')), rowData={};
+    for(let fi=0;fi<mf.length;fi++){
+      const f=mf[fi], el=g(`mrow_${ri}_${fi}`); if(!el) continue;
+      let val=el.value;
+      if(f.type==='moeda'&&val) val='R$ '+parseFloat(val).toFixed(2).replace('.',',');
+      if(f.type==='percentual'&&val) val=parseFloat(val).toFixed(2)+'%';
+      if(f.required&&!val){showToast(`"${f.name}" obrigatório na linha`,'danger');return;}
+      rowData[f.name]=val;
+    }
+    records.push({...header,...rowData,...audit,...(records.length===0?firstImgs:{})});
+  }
+  const targetId=screen.flowTarget||screen.linkedTableId||screen.id;
+  S.records[targetId]=S.records[targetId]||[];
+  records.forEach(r=>S.records[targetId].push(r));
+  if(targetId!==screen.id){S.records[screen.id]=S.records[screen.id]||[];records.forEach(r=>S.records[screen.id].push(r));}
+  await FB.saveAll();
+  if(screen.sendEmail&&screen.emailRecipients?.length) sendFormEmail(screen,records);
+  closeModal('multiFormModal'); renderHome(); updateStats();
+  showToast(`${records.length} linha(s) registradas!`,'success');
+}
+
+// IMAGENS
+function handleImgUpload(input,ctx){
+  const previewsId=ctx==='multi'?'multiImgPreviews':'formImgPreviews', arr=ctx==='multi'?_multiImgs:_formImgs;
+  [...input.files].forEach(f=>{
+    const reader=new FileReader();
+    reader.onload=e=>{
+      const img=new Image(); img.onload=()=>{
+        const MAX=800; let w=img.width,h=img.height;
+        if(w>MAX||h>MAX){if(w>h){h=Math.round(h*MAX/w);w=MAX;}else{w=Math.round(w*MAX/h);h=MAX;}}
+        const canvas=document.createElement('canvas'); canvas.width=w; canvas.height=h;
+        canvas.getContext('2d').drawImage(img,0,0,w,h);
+        const c=canvas.toDataURL('image/jpeg',.72); arr.push(c);
+        const thumb=document.createElement('img'); thumb.src=c; thumb.className='img-thumb';
+        thumb.onclick=()=>{g('imgViewerSrc').src=c;g('imgViewerModal').classList.add('open');};
+        g(previewsId).appendChild(thumb);
+      }; img.src=e.target.result;
+    }; reader.readAsDataURL(f);
+  });
+}
+
+// EMAIL
+const WEB3FORMS_KEY='YOUR_ACCESS_KEY';
+function sendFormEmail(screen,records){
+  const recipients=[...(screen.emailRecipients||[]),...(S.globalEmailRecipients||[])].filter(Boolean);
+  if(!recipients.length) return;
+  const now=new Date().toLocaleString('pt-BR');
+  const subject=`[FlowBase] ${screen.name} — novo registro em ${now}`;
+  const body=records.map((r,ri)=>{
+    const lines=Object.entries(r).filter(([k])=>!k.startsWith('_images')).map(([k,val])=>`• ${colLabel(k)}: ${val||'—'}`).join('\n');
+    return records.length>1?`--- Registro ${ri+1} ---\n${lines}`:lines;
+  }).join('\n\n');
+  recipients.forEach(to=>fetch('https://api.web3forms.com/submit',{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify({access_key:WEB3FORMS_KEY,to_email:to,subject,message:body,from_name:'FlowBase'})}).then(r=>r.json()).then(d=>{if(!d.success)console.warn('Web3Forms:',d.message);}).catch(e=>console.warn('E-mail falhou:',e)));
+}
+async function loadGlobalRecipients(){
+  try{const s=await window._fbFns.getDoc(window._fbFns.doc(window._fbDb,'app','emailRecipients'));S.globalEmailRecipients=s.exists()?(s.data().list||[]):[];}
+  catch{S.globalEmailRecipients=[];}
+}
+async function saveGlobalRecipients(list){S.globalEmailRecipients=list;await window._fbFns.setDoc(window._fbFns.doc(window._fbDb,'app','emailRecipients'),{list});}
+function openEmailRecipientsModal(){g('globalRecipientsInput').value=(S.globalEmailRecipients||[]).join('\n');g('emailRecipientsModal').classList.add('open');}
+async function saveEmailRecipients(){await saveGlobalRecipients(v('globalRecipientsInput').split('\n').map(s=>s.trim()).filter(Boolean));closeModal('emailRecipientsModal');showToast('Destinatários salvos!','success');}
+
+// CAMPOS
+function onFieldTypeChange(){
+  const val=v('newFieldType');
+  g('fieldLinkConfig').style.display=val==='selecionavel'?'block':'none';
+  g('fieldCalcConfig').style.display=val==='calculado'?'block':'none';
+  const num=['numero','moeda','percentual'].includes(val);
+  g('sumFieldRow').style.display=num?'flex':'none';
+  if(!num) g('fieldIsSum').checked=false;
+  const isCalc=val==='calculado';
+  ['fieldIsMaster','fieldIsUnique','fieldRequired'].forEach(id=>{g(id).disabled=isCalc;if(isCalc)g(id).checked=false;});
+  if(isCalc){
+    const screen=S.screens.find(s=>s.id===S.activeForm?.screenId);
+    const numF=(screen?.fields||[]).filter(f=>['numero','moeda','percentual'].includes(f.type));
+    const opts=numF.map(f=>`<option value="${esc(f.name)}">${esc(f.name)}</option>`).join('');
+    g('calcFieldA').innerHTML=opts; g('calcFieldB').innerHTML=opts;
+  }
+}
+function onMasterOrSumChange(w){
+  if(w==='master'&&g('fieldIsMaster').checked) g('fieldIsSum').checked=false;
+  if(w==='sum'&&g('fieldIsSum').checked) g('fieldIsMaster').checked=false;
+}
+function onAafTypeChange(){
+  const val=v('aafType'); g('aafLinkConfig').style.display=val==='selecionavel'?'block':'none';
+  if(val==='selecionavel') g('aafLinkTarget').innerHTML=S.screens.filter(s=>s.type==='cadastro').map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
+}
+
+function openFieldModal(screenId,fieldIdx){
+  S.activeForm={screenId}; S.editingFieldIdx=fieldIdx;
+  const screen=S.screens.find(s=>s.id===screenId), isEdit=fieldIdx!=null, field=isEdit?screen.fields[fieldIdx]:null;
+  g('fieldModalTitle').textContent=isEdit?'Editar campo':'Novo campo';
+  g('fieldSaveBtn').textContent=isEdit?'Salvar':'Adicionar campo';
+  g('newFieldName').value=field?field.name:''; g('newFieldType').value=field?field.type:'texto';
+  g('fieldRequired').checked=field?!!field.required:false; g('fieldIsMaster').checked=field?!!field.isMaster:false;
+  g('fieldIsUnique').checked=field?!!field.isUnique:false; g('fieldIsSum').checked=field?!!field.isSum:false;
+  onFieldTypeChange();
+  g('fieldLinkTarget').innerHTML=S.screens.filter(s=>s.type==='cadastro').map(s=>`<option value="${s.id}" ${field&&field.linkTarget===s.id?'selected':''}>${esc(s.name)}</option>`).join('');
+  if(field?.type==='selecionavel') g('fieldLinkConfig').style.display='block';
+  if(field?.type==='calculado'&&field.calcA) setTimeout(()=>{g('calcFieldA').value=field.calcA;g('calcFieldB').value=field.calcB;g('calcOp').value=field.calcOp||'+';},50);
+  g('newFieldModal').classList.add('open');
+}
+
+async function saveField(){
+  const name=v('newFieldName'), type=v('newFieldType');
+  if(!name){showToast('Digite o nome','danger');return;}
+  const isMulti=!!S.activeForm.isMultiField, screen=S.screens.find(s=>s.id===S.activeForm.screenId);
+  const field={name,type,required:g('fieldRequired').checked,isMaster:isMulti?false:g('fieldIsMaster').checked,isUnique:isMulti?false:g('fieldIsUnique').checked,isSum:g('fieldIsSum').checked};
+  if(type==='selecionavel') field.linkTarget=parseInt(v('fieldLinkTarget'))||null;
+  if(type==='calculado'){field.calcA=v('calcFieldA');field.calcOp=v('calcOp');field.calcB=v('calcFieldB');field.required=false;}
+  const isEdit=S.editingFieldIdx!=null;
+  if(isMulti){
+    if(!screen.multiFields) screen.multiFields=[];
+    if(isEdit) screen.multiFields[S.editingFieldIdx]=field; else screen.multiFields.push(field);
+  } else {
+    if(isEdit) screen.fields[S.editingFieldIdx]=field; else screen.fields.push(field);
+    if(screen.linkedTableId){const t=S.screens.find(s=>s.id===screen.linkedTableId);if(t)t.fields=[...screen.fields];}
+  }
+  await FB.saveAll(); closeModal('newFieldModal'); renderBuilderDetail();
+  showToast(isEdit?'Campo atualizado!':'Campo adicionado!','success');
+}
+
+async function removeField(screenId,idx){
+  if(!confirm('Remover campo?')) return;
+  const s=S.screens.find(x=>x.id===screenId); s.fields.splice(idx,1);
+  if(s.linkedTableId){const t=S.screens.find(x=>x.id===s.linkedTableId);if(t)t.fields=[...s.fields];}
+  await FB.saveAll(); renderBuilderDetail(); showToast('Campo removido','danger');
+}
+
+// AÇÕES
+function openNewActionModal(tableId){
+  const screen=S.screens.find(s=>s.id===tableId); if(!screen) return;
+  S.activeForm={actionTableId:tableId}; S.tempActionFields=[]; S.editingActionIdx=null;
+  g('actionModalTitle').textContent='Novo botão de ação'; g('actionSaveBtn').textContent='Criar botão';
+  g('actionBtnName').value='';
+  g('actionMasterField').innerHTML=`<option value="">Selecione...</option>`+screen.fields.map(f=>`<option value="${esc(f.name)}">${esc(f.name)}</option>`).join('');
+  const outras=S.screens.filter(s=>(s.type==='tabela'||s.type==='tabela-form')&&s.id!==tableId);
+  g('actionTargetTable').innerHTML=`<option value="__new__">Criar nova tabela</option>`+outras.map(s=>`<option value="${s.id}">${esc(s.name)}</option>`).join('');
+  g('actionModeFlow').checked=true; renderTempActionFields(); g('newActionModal').classList.add('open');
+}
+
+function openEditActionModal(tableId,actionIdx){
+  const screen=S.screens.find(s=>s.id===tableId); if(!screen) return;
+  const act=screen.actions[actionIdx]; if(!act) return;
+  S.activeForm={actionTableId:tableId}; S.tempActionFields=[...(act.extraFields||[])]; S.editingActionIdx=actionIdx;
+  g('actionModalTitle').textContent='Editar botão'; g('actionSaveBtn').textContent='Salvar';
+  g('actionBtnName').value=act.name;
+  g('actionMasterField').innerHTML=`<option value="">Selecione...</option>`+screen.fields.map(f=>`<option value="${esc(f.name)}" ${f.name===act.masterField?'selected':''}>${esc(f.name)}</option>`).join('');
+  const outras=S.screens.filter(s=>(s.type==='tabela'||s.type==='tabela-form')&&s.id!==tableId);
+  g('actionTargetTable').innerHTML=`<option value="__new__">Criar nova tabela</option>`+outras.map(s=>`<option value="${s.id}" ${s.id===act.targetTableId?'selected':''}>${esc(s.name)}</option>`).join('');
+  renderTempActionFields();
+  document.querySelectorAll('input[name="actionMode"]').forEach(r=>{r.checked=r.value===(act.actionMode||'flow');});
+  g('newActionModal').classList.add('open');
+}
+
+function renderTempActionFields(){
+  g('actionFieldsList').innerHTML=!S.tempActionFields.length?`<div style="font-size:12px;color:var(--text3);padding:6px 0">Nenhum campo.</div>`:
+    S.tempActionFields.map((f,i)=>`<div class="field-item"><span class="field-name">${esc(f.name)}</span><span class="field-type-tag">${f.type}</span>${f.required?'<span class="required-badge">obrigatório</span>':''}<button class="btn btn-sm btn-danger" onclick="removeTempActionField(${i})">×</button></div>`).join('');
+}
+function removeTempActionField(i){S.tempActionFields.splice(i,1);renderTempActionFields();}
+function addActionField(){g('aafName').value='';g('aafType').value='texto';g('aafRequired').checked=false;g('addActionFieldModal').classList.add('open');}
+function confirmActionField(){
+  const name=v('aafName'); if(!name){showToast('Digite o nome','danger');return;}
+  const f={name,type:v('aafType'),required:g('aafRequired').checked};
+  if(f.type==='selecionavel') f.linkTarget=parseInt(v('aafLinkTarget'))||null;
+  S.tempActionFields.push(f); renderTempActionFields(); closeModal('addActionFieldModal');
+}
+
+async function saveAction(){
+  const name=v('actionBtnName'), masterField=v('actionMasterField'), targetVal=v('actionTargetTable');
+  const actionMode=document.querySelector('input[name="actionMode"]:checked')?.value||'flow';
+  if(!name){showToast('Digite o nome','danger');return;}
+  if(!masterField){showToast('Selecione o campo mestre','danger');return;}
+  const tableId=S.activeForm.actionTableId, src=S.screens.find(s=>s.id===tableId);
+  if(!src.actions) src.actions=[];
+  const isEdit=S.editingActionIdx!=null;
+  let targetTableId;
+  if(isEdit){
+    const ea=src.actions[S.editingActionIdx];
+    targetTableId=targetVal==='__new__'?ea.targetTableId:parseInt(targetVal);
+    if(targetVal==='__new__'&&!targetTableId){
+      const nt={id:uid(),name:src.name+' → '+name,type:'tabela-form',fields:[...src.fields,...S.tempActionFields],actions:[],linkedFormId:null,linkedTableId:null,sourceTableId:tableId,actionName:name};
+      S.screens.push(nt);S.records[nt.id]=[];targetTableId=nt.id;
+    }
+    src.actions[S.editingActionIdx]={name,masterField,extraFields:[...S.tempActionFields],targetTableId,actionMode};
+  } else {
+    if(targetVal==='__new__'){
+      const nt={id:uid(),name:src.name+' → '+name,type:'tabela-form',fields:[...src.fields,...S.tempActionFields],actions:[],linkedFormId:null,linkedTableId:null,sourceTableId:tableId,actionName:name};
+      S.screens.push(nt);S.records[nt.id]=[];targetTableId=nt.id;
+    } else {
+      targetTableId=parseInt(targetVal);
+      const dest=S.screens.find(s=>s.id===targetTableId);
+      if(dest){const en=dest.fields.map(f=>f.name);[...src.fields,...S.tempActionFields].forEach(f=>{if(!en.includes(f.name))dest.fields.push({...f});});}
+    }
+    src.actions.push({name,masterField,extraFields:[...S.tempActionFields],targetTableId,actionMode});
+  }
+  S.tempActionFields=[];
+  await FB.saveAll();closeModal('newActionModal');renderBuilderDetail();renderHome();
+  showToast(isEdit?'Botão atualizado!':'Botão criado!','success');
+}
+
+async function deleteAction(tableId,ai){
+  if(!confirm('Excluir botão?')) return;
+  const s=S.screens.find(x=>x.id===tableId); if(!s?.actions) return;
+  const act=s.actions[ai];
+  if(act?.targetTableId){const d=S.screens.find(x=>x.id===act.targetTableId);if(d&&d.type==='tabela-form'){S.screens=S.screens.filter(x=>x.id!==act.targetTableId);delete S.records[act.targetTableId];}}
+  s.actions.splice(ai,1);
+  await FB.saveAll(); renderBuilderDetail(); renderHome(); showToast('Botão removido','danger');
+}
+
+// FORMULÁRIO DE AÇÃO
+function openActionForm(tableId,actionIdx){
+  const screen=S.screens.find(s=>s.id===tableId), action=screen?.actions[actionIdx]; if(!action) return;
+  const recs=S.records[tableId]||[]; S.activeAction={tableId,actionIdx};
+  g('actionFormTitle').textContent=action.name;
+  g('actionFormSubtitle').textContent=`Selecione pelo campo "${action.masterField}".${action.actionMode==='history'?' · Modo histórico':''}`;
+  const masterVals=[...new Set(recs.map(r=>r[action.masterField]).filter(Boolean))];
+  let h=`<label>${esc(action.masterField)} <span class="required-badge">*</span></label>
+    <select id="actionMasterValue" style="margin-bottom:8px" onchange="onActionMasterChange(${tableId},${actionIdx},this.value)">
+      <option value="">Selecionar...</option>${masterVals.map(val=>`<option value="${esc(val)}">${esc(val)}</option>`).join('')}
+    </select>`;
+  const sumFields=(screen.fields||[]).filter(f=>f.isSum), calcFields=(screen.fields||[]).filter(f=>f.type==='calculado');
+  if(action.actionMode!=='history'&&sumFields.length){
+    const pSF=sumFields.filter(f=>f.type!=='calculado'), cSF=sumFields.filter(f=>f.type==='calculado');
+    h+=`<div style="background:var(--warn-l);border-radius:8px;padding:10px;margin:6px 0 10px;font-size:12px;color:var(--warn)">Informe a quantidade a dar saída. Campos calculados são ajustados automaticamente.</div>`;
+    pSF.forEach(sf=>{const sid=sf.name.replace(/[^a-zA-Z0-9]/g,'_');h+=`<label>${esc(sf.name)} a transferir <span class="required-badge">*</span></label><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">${buildFieldInput(sf,'actionSumField_'+sid,'')}<span id="saldoLabel_${sid}" style="font-size:11px;color:var(--text3);white-space:nowrap;min-width:80px">Saldo: —</span></div>`;});
+    if(cSF.length) h+=`<div style="font-size:11px;color:var(--text3);background:var(--bg3);border-radius:6px;padding:8px;margin-bottom:8px">⚙ Calculados (${cSF.map(f=>esc(f.name)).join(', ')}) ajustados automaticamente.</div>`;
+  }
+  (action.extraFields||[]).forEach((f,i)=>{h+=`<label>${esc(f.name)}${f.required?' <span class="required-badge">*</span>':''}</label>${buildFieldInput(f,'actionField_'+i,'')}`;});
+  g('actionFormFields').innerHTML=h; g('actionFormModal').classList.add('open');
+}
+
+function onActionMasterChange(tableId,actionIdx,masterVal){
+  if(!masterVal) return;
+  const screen=S.screens.find(s=>s.id===tableId), action=screen.actions[actionIdx];
+  const row=(S.records[tableId]||[]).find(r=>r[action.masterField]===masterVal); if(!row) return;
+  (screen.fields||[]).filter(f=>f.isSum).forEach(sf=>{
+    const el=g('saldoLabel_'+sf.name.replace(/[^a-zA-Z0-9]/g,'_')); if(el) el.textContent='Saldo: '+(row[sf.name]||'0');
+  });
+}
+
+async function submitActionForm(){
+  const {tableId,actionIdx}=S.activeAction;
+  const screen=S.screens.find(s=>s.id===tableId), action=screen.actions[actionIdx];
+  const recs=S.records[tableId]||[], masterVal=g('actionMasterValue').value;
+  if(!masterVal){showToast('Selecione um valor','danger');return;}
+  const rowIdx=recs.findIndex(r=>r[action.masterField]===masterVal);
+  if(rowIdx===-1){showToast('Registro não encontrado','danger');return;}
+  const sourceRow={...recs[rowIdx]}, extraData={};
+  const extraFields=action.extraFields||[];
+  for(let i=0;i<extraFields.length;i++){
+    const f=extraFields[i], el=g('actionField_'+i), val=el?el.value:'';
+    if(f.required&&!val){showToast(`"${f.name}" é obrigatório`,'danger');return;}
+    extraData[f.name]=val;
+  }
+  const now=new Date(), srcKeys=Object.keys(sourceRow), renamedAudit={};
+  let nextStep=2;
+  if(srcKeys.includes('_data')&&!srcKeys.includes('_data_1')){
+    renamedAudit['_data_1']=sourceRow._data;renamedAudit['_hora_1']=sourceRow._hora;renamedAudit['_usuario_1']=sourceRow._usuario;
+    delete sourceRow._data;delete sourceRow._hora;delete sourceRow._usuario;nextStep=2;
+  } else while(srcKeys.includes(`_data_${nextStep}`)) nextStep++;
+  const auditFields={[`_data_${nextStep}`]:now.toLocaleDateString('pt-BR'),[`_hora_${nextStep}`]:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),[`_usuario_${nextStep}`]:S.currentUserData?.name||S.currentUser?.email||'—'};
+  const actionMode=action.actionMode||'flow', sumFields=(screen.fields||[]).filter(f=>f.isSum);
+  if(actionMode==='flow'){
+    if(sumFields.length){
+      const pSF=sumFields.filter(f=>f.type!=='calculado'), cSF=sumFields.filter(f=>f.type==='calculado');
+      for(const sf of pSF){
+        const el=g('actionSumField_'+sf.name.replace(/[^a-zA-Z0-9]/g,'_')); if(!el) continue;
+        const qtd=parseFloat(el.value)||0;
+        if(qtd<=0){showToast(`Informe quantidade positiva para "${sf.name}"`,'danger');return;}
+        const saldo=parseRawNum(sourceRow[sf.name]);
+        if(qtd>saldo){showToast(`Saldo insuficiente para "${sf.name}". Disponível: ${saldo}`,'danger');return;}
+        S.records[tableId][rowIdx][sf.name]=fmtField(sf,saldo-qtd);
+        extraData[sf.name]=fmtField(sf,qtd);
+      }
+      for(const cf of cSF){
+        const getV=n=>extraData[n]!==undefined?parseRawNum(extraData[n]):parseRawNum(sourceRow[n]);
+        const a=getV(cf.calcA), b=getV(cf.calcB);
+        let res=0; if(cf.calcOp==='+')res=a+b;else if(cf.calcOp==='-')res=a-b;else if(cf.calcOp==='*')res=a*b;else if(cf.calcOp==='/'&&b!==0)res=a/b;
+        extraData[cf.name]=fmtField(cf,res);
+        const pFirst=pSF[0];
+        if(pFirst){const nQ=parseRawNum(S.records[tableId][rowIdx]?.[pFirst.name]||'0'),uKey=cf.calcA===pFirst.name?cf.calcB:cf.calcA;S.records[tableId][rowIdx][cf.name]=fmtField(cf,nQ*parseRawNum(sourceRow[uKey]));}
+      }
+      const pFirst=pSF[0];
+      if(pFirst&&parseRawNum(S.records[tableId][rowIdx]?.[pFirst.name]||'0')===0) S.records[tableId].splice(rowIdx,1);
+    } else S.records[tableId].splice(rowIdx,1);
+  }
+  S.records[action.targetTableId]=S.records[action.targetTableId]||[];
+  S.records[action.targetTableId].push({...sourceRow,...renamedAudit,...extraData,...auditFields});
+  await FB.saveAll(); closeModal('actionFormModal'); updateStats(); renderHome();
+  if(S.currentTableView===tableId||S.currentTableView===action.targetTableId) renderTableView();
+  showToast('Ação executada!','success');
+}
+
+// FORM NORMAL
+function openFormModal(screenId){
+  const screen=S.screens.find(s=>s.id===screenId); if(!screen) return;
+  if(screen.isMulti){openMultiFormModal(screenId);return;}
+  S.activeForm={screenId}; _formImgs=[];
+  g('formModalTitle').textContent=screen.name;
+  g('formModalSubtitle').textContent=screen.type==='cadastro'?'Cadastre um novo registro.':'Preencha e salve.';
+  g('formFields').innerHTML=!screen.fields.length?'<div class="empty-state">Nenhum campo configurado.</div>':
+    screen.fields.map((f,i)=>`<label>${esc(f.name)}${f.isMaster?'<span class="field-master-tag" style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--purple-l);color:var(--purple);margin-left:4px">★</span>':''}${f.isUnique?'<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--accent-l);color:var(--accent-t);margin-left:4px">único</span>':''}${f.required?'<span class="required-badge" style="margin-left:4px">*</span>':''}${f.type==='calculado'?'<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--purple-l);color:var(--purple);margin-left:4px">⚙</span>':''}</label>${buildFieldInput(f,'field_'+i,'',screenId)}`).join('');
+  g('formImgSection').style.display=screen.allowImages?'block':'none';
+  g('formImgPreviews').innerHTML=''; g('formModal').classList.add('open');
+}
+
+function buildFieldInput(f,id,extraStyle='',screenId=null){
+  const s=`style="margin-bottom:6px${extraStyle?';'+extraStyle:''}"`;
+  if(f.type==='data') return`<input type="date" id="${id}" ${s}/>`;
+  if(f.type==='hora') return`<input type="time" id="${id}" ${s}/>`;
+  if(f.type==='numero') return`<input type="number" id="${id}" placeholder="${esc(f.name)}" ${s}/>`;
+  if(f.type==='moeda') return`<input type="number" id="${id}" step="0.01" placeholder="0,00" ${s}/>`;
+  if(f.type==='percentual') return`<input type="number" id="${id}" step="0.01" min="0" max="100" placeholder="0,00" ${s}/>`;
+  if(f.type==='booleano') return`<select id="${id}" ${s}><option value="">Selecionar...</option><option>Sim</option><option>Não</option></select>`;
+  if(f.type==='calculado') return`<input type="text" id="${id}" placeholder="(calculado)" readonly ${s} style="margin-bottom:6px;background:var(--bg3);color:var(--text3);cursor:not-allowed"/>`;
+  if(f.type==='selecionavel'&&f.linkTarget){
+    const src=S.screens.find(s=>s.id===f.linkTarget), recs=S.records[f.linkTarget]||[];
+    const mf=src?(src.fields.find(x=>x.isMaster)||src.fields[0]):null, mk=mf?mf.name:null;
+    const opts=recs.map(r=>{const dv=mk?(r[mk]||''):(Object.values(r).find(x=>x&&typeof x==='string'&&!x.startsWith('R$'))||'?');return`<option value="${esc(dv)}">${esc(dv)}</option>`;}).join('');
+    const onch=screenId?`onchange="autoFill(${screenId},this)"`:'';
+    return`<select id="${id}" ${s} data-field-name="${esc(f.name)}" ${onch}><option value="">Selecionar...</option>${opts}</select>`;
+  }
+  return`<input type="text" id="${id}" placeholder="${esc(f.name)}" ${s}/>`;
+}
+
+function autoFill(screenId,selectEl){
+  const val=selectEl.value; if(!val) return;
+  const screen=S.screens.find(s=>s.id===screenId); if(!screen) return;
+  const fn=selectEl.getAttribute('data-field-name'), field=screen.fields.find(f=>f.name===fn);
+  if(!field?.linkTarget) return;
+  const src=S.screens.find(s=>s.id===field.linkTarget), recs=S.records[field.linkTarget]||[];
+  const mf=src?(src.fields.find(x=>x.isMaster)||src.fields[0]):null, mk=mf?mf.name:null;
+  const rec=mk?recs.find(r=>r[mk]===val):recs.find(r=>Object.values(r).includes(val)); if(!rec) return;
+  screen.fields.forEach((f,fi)=>{if(f.name===fn) return; const el=g('field_'+fi); if(el?.tagName==='INPUT'&&rec[f.name]!==undefined) el.value=rec[f.name];});
+}
+
+async function submitForm(){
+  const screen=S.screens.find(s=>s.id===S.activeForm.screenId); if(!screen) return;
+  if(!screen.fields.length){closeModal('formModal');return;}
+  const uf=screen.fields.filter(f=>f.isUnique), tgt=(S.records[screen.linkedTableId||screen.id]||[]);
+  for(const f of uf){
+    const el=g('field_'+screen.fields.indexOf(f)), val=el?(el.tagName==='SELECT'?el.value:el.value.trim()):'';
+    if(val&&tgt.some(r=>r[f.name]===val)){showToast(`"${f.name}" já possui "${val}".`,'danger');return;}
+  }
+  const record={}, now=new Date();
+  for(let i=0;i<screen.fields.length;i++){
+    const f=screen.fields[i]; if(f.type==='calculado') continue;
+    const el=g('field_'+i); if(!el) continue;
+    let val=el.tagName==='SELECT'?el.value:el.value;
+    if(f.type==='moeda'&&val) val='R$ '+parseFloat(val).toFixed(2).replace('.',',');
+    if(f.type==='percentual'&&val) val=parseFloat(val).toFixed(2)+'%';
+    if(f.required&&!val){showToast(`"${f.name}" é obrigatório`,'danger');return;}
+    record[f.name]=val;
+  }
+  screen.fields.filter(f=>f.type==='calculado').forEach(f=>{
+    const a=parseRawNum(record[f.calcA]), b=parseRawNum(record[f.calcB]);
+    let res=0; if(f.calcOp==='+')res=a+b;else if(f.calcOp==='-')res=a-b;else if(f.calcOp==='*')res=a*b;else if(f.calcOp==='/'&&b!==0)res=a/b;
+    record[f.name]=res%1===0?String(res):res.toFixed(4).replace(/\.?0+$/,'');
+  });
+  if(_formImgs.length) record['_images']=JSON.stringify([..._formImgs]);
+  record._data=now.toLocaleDateString('pt-BR'); record._hora=now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); record._usuario=S.currentUserData?.name||S.currentUser?.email||'—';
+  S.records[screen.id]=S.records[screen.id]||[]; S.records[screen.id].push(record);
+  const tId=screen.flowTarget||screen.linkedTableId;
+  if(tId&&tId!==screen.id){S.records[tId]=S.records[tId]||[];S.records[tId].push({...record});}
+  await FB.saveAll();
+  if(screen.sendEmail&&screen.emailRecipients?.length) sendFormEmail(screen,[record]);
+  _formImgs=[]; closeModal('formModal'); renderHome(); updateStats();
+  showToast('Registro salvo!','success');
+}
+
+// USERS
+async function renderUsers(){
+  const el=g('userList'), rL={adm_master:'ADM Master',adm_basico:'ADM Básico',operador:'Operador',visualizador:'Visualizador',bloqueado:'Bloqueado'};
+  const rC={adm_master:'role-master',adm_basico:'role-adm',operador:'role-operator',visualizador:'role-viewer',bloqueado:'role-blocked'};
+  if(!S.users.length){el.innerHTML='<div class="empty-state">Nenhum usuário.</div>';return;}
+  el.innerHTML=S.users.map(u=>{const r=u.blocked?'bloqueado':u.role; return`<div class="user-row"><div class="avatar" style="background:var(--accent-l);color:var(--accent-t)">${(u.name||'?').split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()}</div><div style="flex:1"><div class="user-name">${esc(u.name)}</div><div class="user-email">${esc(u.email)}</div></div><span class="role-badge ${rC[r]}">${rL[r]}</span><select class="btn btn-sm" style="padding:4px 8px;width:auto" onchange="changeUserRole('${u.id}',this.value)">${['operador','visualizador','adm_basico','adm_master'].map(opt=>`<option value="${opt}" ${u.role===opt&&!u.blocked?'selected':''}>${rL[opt]}</option>`).join('')}</select><button class="btn btn-sm ${u.blocked?'btn-primary':'btn-danger'}" onclick="toggleBlock('${u.id}',${u.blocked})">${u.blocked?'Desbloquear':'Bloquear'}</button></div>`;}).join('');
+}
+async function changeUserRole(userId,role){await FB.saveUser(userId,{role,blocked:false});showToast('Permissão atualizada','success');}
+async function toggleBlock(userId,isBlocked){await FB.saveUser(userId,{blocked:!isBlocked});showToast(!isBlocked?'Bloqueado':'Desbloqueado',!isBlocked?'danger':'success');}
+
+// UTILS
+function parseRawNum(str){if(str==null||str==='') return 0; return parseFloat(String(str).replace(/[^0-9.,-]/g,'').replace(',','.').replace(/\.(?=.*\.)/g,''))||0;}
+function fmtField(f,n){if(f.type==='moeda') return'R$ '+n.toFixed(2).replace('.',','); if(f.type==='percentual') return n.toFixed(2)+'%'; return String(n%1===0?n:n.toFixed(3).replace(/\.?0+$/,''));}
+function closeModal(id){g(id).classList.remove('open');}
+function updateStats(){g('statScreens').textContent=S.screens.length;g('statForms').textContent=S.screens.filter(s=>s.type==='formulario').length;g('statRecords').textContent=Object.values(S.records).reduce((a,b)=>a+b.length,0);}
+function showToast(msg,type){const t=g('toast');t.textContent=msg;t.className='toast '+type;t.style.display='block';clearTimeout(t._to);t._to=setTimeout(()=>t.style.display='none',2800);}
+function esc(s){if(s==null) return''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');}
+function g(id){return document.getElementById(id);}
+function v(id){return(g(id)?.value||'').trim();}
+
+document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
+document.addEventListener('DOMContentLoaded',updateScreenTypeHint);
+</script>
+</body>
+</html>
