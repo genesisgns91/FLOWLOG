@@ -1,0 +1,2086 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FlowGNS</title>
+<style>
+  :root {
+    --bg: #0f1117;
+    --surface: #1a1d27;
+    --surface2: #21253a;
+    --border: #2e3250;
+    --accent: #4f6ef7;
+    --accent2: #6c8aff;
+    --text: #e8eaf0;
+    --text2: #8b90a7;
+    --success: #34c77b;
+    --danger: #f05252;
+    --warning: #f59e0b;
+    --radius: 8px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.4);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', system-ui, sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; font-size: 14px; }
+
+  /* AUTH */
+  #auth-screen { display: flex; align-items: center; justify-content: center; min-height: 100vh; background: linear-gradient(135deg, #0f1117 0%, #1a1d27 100%); }
+  .auth-card { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 40px 36px; width: 380px; box-shadow: var(--shadow); }
+  .auth-logo { font-size: 28px; font-weight: 800; color: var(--accent2); letter-spacing: -1px; margin-bottom: 8px; }
+  .auth-subtitle { color: var(--text2); font-size: 13px; margin-bottom: 32px; }
+  .auth-tabs { display: flex; gap: 8px; margin-bottom: 24px; }
+  .auth-tab { flex: 1; padding: 8px; background: none; border: 1px solid var(--border); border-radius: var(--radius); color: var(--text2); cursor: pointer; font-size: 13px; transition: all .2s; }
+  .auth-tab.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .auth-form { display: flex; flex-direction: column; gap: 12px; }
+  .auth-form input { padding: 10px 14px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 14px; outline: none; transition: border-color .2s; }
+  .auth-form input:focus { border-color: var(--accent); }
+  .auth-hint { font-size: 11px; color: var(--text2); margin-top: -4px; }
+  .btn { padding: 10px 18px; border: none; border-radius: var(--radius); cursor: pointer; font-size: 13px; font-weight: 600; transition: all .15s; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: var(--accent2); }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-icon { padding: 6px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text2); cursor: pointer; font-size: 13px; transition: all .15s; }
+  .btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+  .link-btn { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 12px; padding: 0; text-decoration: underline; }
+  .error-msg { background: rgba(240,82,82,.15); border: 1px solid var(--danger); color: var(--danger); padding: 8px 12px; border-radius: var(--radius); font-size: 12px; }
+
+  /* APP LAYOUT */
+  #app { display: none; flex-direction: column; min-height: 100vh; }
+  .topbar { display: flex; align-items: center; gap: 0; background: var(--surface); border-bottom: 1px solid var(--border); padding: 0 24px; height: 54px; position: sticky; top: 0; z-index: 100; }
+  .topbar-logo { font-size: 18px; font-weight: 800; color: var(--accent2); letter-spacing: -0.5px; margin-right: 32px; }
+  .topbar-nav { display: flex; gap: 4px; flex: 1; }
+  .nav-btn { padding: 6px 14px; background: none; border: none; border-radius: var(--radius); color: var(--text2); cursor: pointer; font-size: 13px; font-weight: 500; transition: all .15s; }
+  .nav-btn:hover, .nav-btn.active { background: var(--surface2); color: var(--text); }
+  .topbar-user { display: flex; align-items: center; gap: 10px; margin-left: auto; }
+  .user-badge { font-size: 11px; background: var(--surface2); border: 1px solid var(--border); border-radius: 20px; padding: 3px 10px; color: var(--text2); }
+  .master-badge { background: rgba(79,110,247,.2); border-color: var(--accent); color: var(--accent2); }
+
+  /* PAGES */
+  .page { display: none; padding: 28px 32px; }
+  .page.active { display: block; }
+
+  /* HOME */
+  .stats-row { display: flex; gap: 16px; margin-bottom: 28px; }
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px 24px; min-width: 140px; }
+  .stat-num { font-size: 28px; font-weight: 800; color: var(--accent2); }
+  .stat-label { font-size: 12px; color: var(--text2); margin-top: 4px; }
+  .section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .section-title { font-size: 16px; font-weight: 700; }
+
+  /* SCREENS LIST */
+  .screens-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+  .screen-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; cursor: pointer; transition: all .2s; position: relative; }
+  .screen-card:hover { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+  .screen-card.active-screen { border-color: var(--accent); background: rgba(79,110,247,.08); }
+  .screen-type-badge { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; color: var(--text2); margin-bottom: 6px; }
+  .screen-name { font-weight: 700; font-size: 15px; }
+  .screen-count { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+  /* BUILDER */
+  .builder-layout { display: grid; grid-template-columns: 280px 1fr; gap: 20px; }
+  .builder-sidebar { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px; height: fit-content; position: sticky; top: 74px; }
+  .sidebar-section { margin-bottom: 20px; }
+  .sidebar-section-title { font-size: 11px; text-transform: uppercase; letter-spacing: .8px; color: var(--text2); margin-bottom: 10px; font-weight: 600; }
+  .sidebar-btn { display: flex; align-items: center; gap: 8px; width: 100%; padding: 8px 10px; background: none; border: 1px solid transparent; border-radius: var(--radius); color: var(--text2); cursor: pointer; font-size: 13px; text-align: left; transition: all .15s; margin-bottom: 4px; }
+  .sidebar-btn:hover { background: var(--surface2); border-color: var(--border); color: var(--text); }
+  .builder-main { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 24px; min-height: 400px; }
+
+  /* FIELDS TABLE */
+  .fields-list { border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .field-row { display: grid; grid-template-columns: 1fr auto auto auto auto; gap: 12px; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface); transition: background .15s; }
+  .field-row:last-child { border-bottom: none; }
+  .field-row:hover { background: var(--surface2); }
+  .field-name { font-weight: 600; font-size: 13px; }
+  .field-type { font-size: 11px; color: var(--text2); background: var(--surface2); border-radius: 4px; padding: 2px 7px; }
+  .field-badge { font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+  .badge-master { background: rgba(79,110,247,.2); color: var(--accent2); }
+  .badge-sum { background: rgba(52,199,123,.2); color: var(--success); }
+  .badge-unique { background: rgba(245,158,11,.2); color: var(--warning); }
+  .badge-required { background: rgba(240,82,82,.15); color: var(--danger); }
+
+  /* DATA TABLE - CORRECTED STRUCTURE */
+  .table-wrapper { overflow-x: auto; border: 1px solid var(--border); border-radius: var(--radius); }
+  table.data-table { width: 100%; border-collapse: collapse; table-layout: auto; }
+  table.data-table thead { background: var(--surface2); }
+  table.data-table thead th {
+    padding: 10px 14px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+    color: var(--text2);
+    border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  table.data-table tbody tr { border-bottom: 1px solid var(--border); transition: background .12s; }
+  table.data-table tbody tr:last-child { border-bottom: none; }
+  table.data-table tbody tr:hover { background: rgba(79,110,247,.04); }
+  table.data-table tbody td {
+    padding: 10px 14px;
+    font-size: 13px;
+    color: var(--text);
+    vertical-align: middle;
+  }
+  table.data-table tbody td.master-col { font-weight: 700; color: var(--accent2); }
+  table.data-table tbody td.num-col { text-align: right; font-variant-numeric: tabular-nums; }
+  table.data-table tfoot { background: var(--surface2); border-top: 2px solid var(--border); }
+  table.data-table tfoot td {
+    padding: 10px 14px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text);
+    text-align: right;
+  }
+  table.data-table tfoot td:first-child { text-align: left; color: var(--text2); }
+
+  /* SUMMARY TABLE SPECIFIC */
+  .summary-table-wrapper { margin-bottom: 24px; }
+  .summary-table-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--accent2);
+    margin-bottom: 8px;
+    padding: 0 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .summary-table-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .history-table-label {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: .8px;
+    color: var(--text2);
+    margin-bottom: 8px;
+    padding: 0 2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .history-table-label::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+  .empty-table { text-align: center; padding: 32px; color: var(--text2); font-size: 13px; }
+
+  /* MODALS */
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.65); z-index: 1000; align-items: center; justify-content: center; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 480px; max-height: 90vh; overflow-y: auto; box-shadow: var(--shadow); }
+  .modal-lg { width: 580px; }
+  .modal-title { font-size: 17px; font-weight: 800; margin-bottom: 4px; }
+  .modal-subtitle { font-size: 12px; color: var(--text2); margin-bottom: 22px; }
+  .modal-footer { display: flex; gap: 10px; justify-content: flex-end; margin-top: 22px; padding-top: 18px; border-top: 1px solid var(--border); }
+  .form-group { margin-bottom: 16px; }
+  .form-label { font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 6px; display: block; }
+  .form-label.required::after { content: ' *'; color: var(--danger); }
+  .form-input, .form-select, .form-textarea { width: 100%; padding: 9px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 13px; outline: none; transition: border-color .2s; }
+  .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+  .form-select option { background: var(--surface2); }
+  .form-textarea { resize: vertical; min-height: 80px; font-family: inherit; }
+  .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .toggle-row:last-child { border-bottom: none; }
+  .toggle-label { font-size: 13px; font-weight: 600; }
+  .toggle-desc { font-size: 11px; color: var(--text2); margin-top: 2px; }
+  .toggle { position: relative; width: 38px; height: 22px; flex-shrink: 0; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider { position: absolute; inset: 0; background: var(--border); border-radius: 22px; cursor: pointer; transition: .2s; }
+  .toggle-slider::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; bottom: 3px; background: #fff; border-radius: 50%; transition: .2s; }
+  .toggle input:checked + .toggle-slider { background: var(--accent); }
+  .toggle input:checked + .toggle-slider::before { transform: translateX(16px); }
+
+  /* ACTION ROW */
+  .action-bar { display: flex; align-items: center; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
+  .action-bar .spacer { flex: 1; }
+  .search-input { padding: 8px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 13px; outline: none; width: 220px; }
+  .search-input:focus { border-color: var(--accent); }
+
+  /* USERS TABLE */
+  .users-table { width: 100%; border-collapse: collapse; }
+  .users-table th, .users-table td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .users-table th { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; background: var(--surface2); }
+  .role-badge { display: inline-block; font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+  .role-master { background: rgba(79,110,247,.2); color: var(--accent2); }
+  .role-operator { background: var(--surface2); color: var(--text2); border: 1px solid var(--border); }
+
+  /* EMAIL GROUPS */
+  .group-card { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+  .group-name { font-weight: 700; font-size: 14px; margin-bottom: 8px; }
+  .email-chip { display: inline-block; background: rgba(79,110,247,.15); border: 1px solid rgba(79,110,247,.3); border-radius: 20px; padding: 2px 10px; font-size: 11px; color: var(--accent2); margin: 2px; }
+  .email-list-textarea { width: 100%; padding: 8px 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); color: var(--text); font-size: 12px; resize: vertical; height: 90px; outline: none; font-family: inherit; }
+
+  /* CALC BUILDER */
+  .calc-builder { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); min-height: 44px; }
+  .calc-token { background: rgba(79,110,247,.2); border: 1px solid rgba(79,110,247,.4); border-radius: 4px; padding: 2px 8px; font-size: 12px; color: var(--accent2); cursor: default; }
+  .calc-op { background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 2px 8px; font-size: 12px; }
+  .calc-controls { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .calc-op-btn { padding: 4px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; color: var(--text); cursor: pointer; font-size: 13px; font-weight: 700; }
+  .calc-op-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* CONDITIONAL RULES */
+  .rule-card { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+  .rule-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; }
+  .rule-select { padding: 5px 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; color: var(--text); font-size: 12px; }
+
+  /* ACTION BUTTONS IN TABLE */
+  .tbl-actions { display: flex; gap: 6px; }
+  .tbl-action-btn { padding: 4px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; color: var(--text2); cursor: pointer; font-size: 12px; font-weight: 600; transition: all .15s; }
+  .tbl-action-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .tbl-action-btn.danger:hover { border-color: var(--danger); color: var(--danger); }
+
+  /* FORM FILL */
+  .form-fill-field { margin-bottom: 14px; }
+  .multi-line-row { display: flex; gap: 10px; padding: 12px; background: var(--surface2); border-radius: var(--radius); margin-bottom: 8px; align-items: flex-start; }
+  .multi-line-row .form-group { flex: 1; margin-bottom: 0; }
+
+  /* IMAGES */
+  .images-section { margin-top: 16px; }
+  .image-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .image-thumb { width: 72px; height: 72px; object-fit: cover; border-radius: var(--radius); border: 1px solid var(--border); cursor: pointer; }
+  .add-image-btn { width: 72px; height: 72px; border: 2px dashed var(--border); border-radius: var(--radius); display: flex; align-items: center; justify-content: center; cursor: pointer; color: var(--text2); font-size: 20px; transition: all .2s; background: none; }
+  .add-image-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* CHIP */
+  .chip { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; padding: 2px 8px; border-radius: 20px; margin: 2px; }
+
+  /* AUDIT FIELDS */
+  .audit-row { background: rgba(79,110,247,.04); }
+  .audit-col { font-size: 11px !important; color: var(--text2) !important; }
+
+  /* DIVIDER */
+  .divider { height: 1px; background: var(--border); margin: 20px 0; }
+
+  /* HELPER */
+  .help-text { font-size: 11px; color: var(--text2); margin-top: 4px; }
+  .info-box { background: rgba(79,110,247,.08); border: 1px solid rgba(79,110,247,.3); border-radius: var(--radius); padding: 12px 14px; font-size: 12px; color: var(--text2); margin-bottom: 16px; }
+  .info-box strong { color: var(--accent2); }
+
+  /* RESPONSIVE */
+  @media (max-width: 768px) {
+    .builder-layout { grid-template-columns: 1fr; }
+    .page { padding: 16px; }
+    .stats-row { flex-wrap: wrap; }
+    .modal { width: 95vw; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== AUTH SCREEN ===================== -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">FlowGNS</div>
+    <div class="auth-subtitle">Sistema de gestão personalizável</div>
+    <div class="auth-tabs">
+      <button class="auth-tab active" onclick="switchAuthTab('login')">Entrar</button>
+      <button class="auth-tab" onclick="switchAuthTab('register')">Criar conta</button>
+    </div>
+
+    <!-- LOGIN -->
+    <div id="tab-login" class="auth-form">
+      <input type="email" id="login-email" placeholder="E-mail" autocomplete="email">
+      <input type="password" id="login-password" placeholder="Senha" autocomplete="current-password">
+      <div id="login-error" class="error-msg" style="display:none"></div>
+      <button class="btn btn-primary" onclick="doLogin()">Entrar</button>
+      <button class="link-btn" onclick="switchAuthTab('forgot')" style="align-self:center">Esqueceu a senha?</button>
+    </div>
+
+    <!-- REGISTER -->
+    <div id="tab-register" class="auth-form" style="display:none">
+      <input type="text" id="reg-name" placeholder="Nome completo">
+      <input type="email" id="reg-email" placeholder="E-mail">
+      <input type="password" id="reg-password" placeholder="Senha">
+      <div id="reg-error" class="error-msg" style="display:none"></div>
+      <button class="btn btn-primary" onclick="doRegister()">Criar conta</button>
+      <div class="help-text" style="text-align:center">Novos usuários ficam como Operador até o Master alterar.</div>
+    </div>
+
+    <!-- FORGOT -->
+    <div id="tab-forgot" class="auth-form" style="display:none">
+      <input type="email" id="forgot-email" placeholder="E-mail da conta">
+      <div id="forgot-msg" class="error-msg" style="display:none"></div>
+      <button class="btn btn-primary" onclick="doForgot()">Enviar link de recuperação</button>
+      <button class="link-btn" onclick="switchAuthTab('login')" style="align-self:center">← Voltar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">FlowGNS</div>
+    <div class="topbar-nav">
+      <button class="nav-btn active" onclick="showPage('home')" id="nav-home">Início</button>
+      <button class="nav-btn" onclick="showPage('builder')" id="nav-builder">Construtor</button>
+      <button class="nav-btn" id="nav-users" onclick="showPage('users')" style="display:none">Usuários</button>
+    </div>
+    <div class="topbar-user">
+      <span class="user-badge" id="user-role-badge">Operador</span>
+      <span id="user-name-display" style="font-size:13px;font-weight:600"></span>
+      <button class="btn btn-secondary btn-sm" onclick="doLogout()">↪ Sair</button>
+    </div>
+  </div>
+
+  <!-- HOME PAGE -->
+  <div class="page active" id="page-home">
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-num" id="stat-screens">0</div>
+        <div class="stat-label">Telas criadas</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-forms">0</div>
+        <div class="stat-label">Formulários</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num" id="stat-records">0</div>
+        <div class="stat-label">Registros</div>
+      </div>
+    </div>
+
+    <div class="section-header">
+      <div class="section-title">Telas criadas</div>
+      <button class="btn btn-primary btn-sm" onclick="openModal('modal-new-screen')">+ Nova tela</button>
+    </div>
+    <div id="home-screens-grid" class="screens-grid">
+      <div style="color:var(--text2);font-size:13px;padding:16px 0;">Selecione uma tela para editar.</div>
+    </div>
+
+    <div class="divider"></div>
+
+    <div class="section-header">
+      <div class="section-title">📧 Grupos de E-mail</div>
+      <button class="btn btn-secondary btn-sm" onclick="openModal('modal-email-groups')">Gerenciar grupos</button>
+    </div>
+    <div id="home-email-groups-preview" style="color:var(--text2);font-size:13px;">Nenhum grupo criado.</div>
+  </div>
+
+  <!-- BUILDER PAGE -->
+  <div class="page" id="page-builder">
+    <div class="builder-layout">
+      <div class="builder-sidebar">
+        <div class="sidebar-section">
+          <div class="sidebar-section-title">Telas</div>
+          <div id="sidebar-screens-list"></div>
+          <button class="sidebar-btn" style="color:var(--accent);border-color:rgba(79,110,247,.3);margin-top:6px;" onclick="openModal('modal-new-screen')">
+            <span>+</span> Nova tela
+          </button>
+        </div>
+        <div class="sidebar-section" id="sidebar-actions-section" style="display:none">
+          <div class="sidebar-section-title">Ações da tela</div>
+          <button class="sidebar-btn" onclick="openAddField()">+ Novo campo</button>
+          <button class="sidebar-btn" onclick="openModal('modal-new-action-btn')" id="sidebar-action-btn">⚡ Novo botão de ação</button>
+          <button class="sidebar-btn" onclick="openRenameModal()" id="sidebar-rename-btn">✏️ Renomear tabela</button>
+          <button class="sidebar-btn" onclick="openConditionalRules()" id="sidebar-cond-btn">🔀 Regras condicionais</button>
+          <button class="sidebar-btn" onclick="openSaldoConfig()" id="sidebar-saldo-btn">⚙️ Configuração de saldo</button>
+          <button class="sidebar-btn" style="color:var(--danger);" onclick="deleteCurrentScreen()" id="sidebar-delete-btn">🗑️ Excluir tela</button>
+        </div>
+      </div>
+
+      <div class="builder-main" id="builder-main">
+        <div style="color:var(--text2);text-align:center;padding:48px 0;">
+          <div style="font-size:32px;margin-bottom:12px;">🧩</div>
+          <div>Selecione uma tela para editar.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- USERS PAGE -->
+  <div class="page" id="page-users">
+    <div class="section-header">
+      <div class="section-title">Gestão de usuários</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;">
+      <table class="users-table">
+        <thead>
+          <tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th>Ações</th></tr>
+        </thead>
+        <tbody id="users-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== MODALS ===================== -->
+
+<!-- MASTER PASSWORD -->
+<div class="modal-overlay" id="modal-master-pwd">
+  <div class="modal" style="width:360px;">
+    <div class="modal-title">Acesso Master</div>
+    <div class="modal-subtitle">Digite a senha para ativar o modo construtor.</div>
+    <div class="form-group">
+      <input type="password" class="form-input" id="master-pwd-input" placeholder="Senha" onkeydown="if(event.key==='Enter')checkMasterPwd()">
+    </div>
+    <div class="error-msg" id="master-pwd-error" style="display:none;margin-bottom:12px;">Senha incorreta.</div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-master-pwd')">Cancelar</button>
+      <button class="btn btn-primary" onclick="checkMasterPwd()">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW SCREEN -->
+<div class="modal-overlay" id="modal-new-screen">
+  <div class="modal">
+    <div class="modal-title">Nova tela</div>
+    <div class="modal-subtitle">Escolha o tipo e dê um nome.</div>
+    <div class="form-group">
+      <label class="form-label required">Tipo de tela</label>
+      <select class="form-select" id="new-screen-type" onchange="toggleScreenOptions()">
+        <option value="cadastro">Cadastro — lista base de dados</option>
+        <option value="formulario">Formulário — entrada de dados</option>
+        <option value="formulario-multi">Formulário multi-linha</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label class="form-label required">Nome da tela</label>
+      <input type="text" class="form-input" id="new-screen-name" placeholder="Ex: Produtos, Clientes…">
+    </div>
+
+    <div class="sidebar-section-title" style="margin:16px 0 10px;">Opções adicionais</div>
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">Permitir imagens</div>
+        <div class="toggle-desc">O operador pode anexar fotos ao registrar.</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="new-screen-images"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">Enviar e-mail ao registrar</div>
+        <div class="toggle-desc">Notifica destinatários a cada novo registro.</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="new-screen-email" onchange="toggleEmailOpts()"><span class="toggle-slider"></span></label>
+    </div>
+    <div id="email-opts" style="display:none;margin-top:12px;">
+      <div class="help-text" style="margin-bottom:8px;">E-mail via EmailJS — envios diretos, sem servidor.</div>
+      <div class="form-group">
+        <label class="form-label">Grupo de destinatários</label>
+        <select class="form-select" id="new-screen-email-group">
+          <option value="">Selecione um grupo…</option>
+        </select>
+        <div class="help-text">Grupos gerenciados em Início → 📧 Grupos de E-mail. <button class="link-btn" onclick="closeModal('modal-new-screen');openModal('modal-email-groups')">Criar grupo agora</button></div>
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-new-screen')">Cancelar</button>
+      <button class="btn btn-primary" onclick="createScreen()">Criar</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW FIELD -->
+<div class="modal-overlay" id="modal-new-field">
+  <div class="modal modal-lg">
+    <div class="modal-title">Novo campo</div>
+    <div class="form-group">
+      <label class="form-label required">Nome</label>
+      <input type="text" class="form-input" id="field-name" placeholder="Nome do campo">
+    </div>
+    <div class="form-group">
+      <label class="form-label required">Tipo</label>
+      <select class="form-select" id="field-type" onchange="onFieldTypeChange()">
+        <option value="text">Texto</option>
+        <option value="number">Número</option>
+        <option value="currency">Moeda (R$)</option>
+        <option value="percent">Percentual (%)</option>
+        <option value="date">Data</option>
+        <option value="time">Hora</option>
+        <option value="boolean">Sim / Não</option>
+        <option value="select">Selecionável (vínculo com cadastro)</option>
+        <option value="calc">Calculado</option>
+        <option value="mask">Com máscara (CPF, CNPJ, Tel…)</option>
+      </select>
+    </div>
+
+    <!-- Select link -->
+    <div id="field-select-opts" style="display:none;" class="form-group">
+      <label class="form-label">Vincular com cadastro</label>
+      <select class="form-select" id="field-link-table">
+        <option value="">— Selecione —</option>
+      </select>
+      <div class="help-text">Preenchimento automático ao selecionar um registro.</div>
+    </div>
+
+    <!-- Mask type -->
+    <div id="field-mask-opts" style="display:none;" class="form-group">
+      <label class="form-label">Tipo de máscara</label>
+      <select class="form-select" id="field-mask-type" onchange="toggleCustomMask()">
+        <option value="cpf">CPF — 000.000.000-00</option>
+        <option value="cnpj">CNPJ — 00.000.000/0000-00</option>
+        <option value="phone">Telefone — (00) 0000-0000</option>
+        <option value="cell">Celular — (00) 00000-0000</option>
+        <option value="cep">CEP — 00000-000</option>
+        <option value="date_m">Data — 00/00/0000</option>
+        <option value="plate">Placa — AAA-0000</option>
+        <option value="custom">Personalizada</option>
+      </select>
+      <div id="custom-mask-input" style="display:none;margin-top:8px;">
+        <input type="text" class="form-input" id="field-custom-mask" placeholder="Máscara personalizada">
+      </div>
+    </div>
+
+    <!-- Calc -->
+    <div id="field-calc-opts" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Expressão de cálculo</label>
+        <div class="help-text" style="margin-bottom:8px;">Campo calculado automaticamente ao salvar. Use os campos disponíveis e operadores para montar a expressão.</div>
+        <div class="calc-builder" id="calc-display"></div>
+        <div class="calc-controls">
+          <select class="form-select" id="calc-field-select" style="width:auto;padding:4px 8px;font-size:12px;">
+            <option value="">+ campo…</option>
+          </select>
+          <button class="calc-op-btn" onclick="addCalcToken('field_label', '+')">+</button>
+          <button class="calc-op-btn" onclick="addCalcToken('op', '−')">−</button>
+          <button class="calc-op-btn" onclick="addCalcToken('op', '×')">×</button>
+          <button class="calc-op-btn" onclick="addCalcToken('op', '÷')">÷</button>
+          <button class="calc-op-btn" onclick="clearCalcExpr()" style="color:var(--danger);">✕</button>
+        </div>
+        <input type="hidden" id="calc-expression">
+      </div>
+    </div>
+
+    <div class="sidebar-section-title" style="margin:16px 0 10px;">Comportamento</div>
+    <div class="toggle-row">
+      <div><div class="toggle-label">Obrigatório</div></div>
+      <label class="toggle"><input type="checkbox" id="field-required"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">Campo mestre</div>
+        <div class="toggle-desc">Coluna principal — identifica cada linha.</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="field-master"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">Item único</div>
+        <div class="toggle-desc">Bloqueia entradas duplicadas.</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="field-unique"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="toggle-row">
+      <div>
+        <div class="toggle-label">Campo de soma</div>
+        <div class="toggle-desc">Acumula valores com resumo automático.</div>
+      </div>
+      <label class="toggle"><input type="checkbox" id="field-sum"><span class="toggle-slider"></span></label>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-new-field')">Cancelar</button>
+      <button class="btn btn-primary" onclick="addField()">Adicionar campo</button>
+    </div>
+  </div>
+</div>
+
+<!-- NEW ACTION BUTTON -->
+<div class="modal-overlay" id="modal-new-action-btn">
+  <div class="modal modal-lg">
+    <div class="modal-title">Novo botão de ação</div>
+    <div class="modal-subtitle">Configure um comando para esta tabela.</div>
+    <div class="form-group">
+      <label class="form-label required">Nome do botão</label>
+      <input type="text" class="form-input" id="action-btn-name" placeholder="Ex: Transferir, Dar saída…">
+    </div>
+    <div class="form-group">
+      <label class="form-label required">Campo mestre</label>
+      <select class="form-select" id="action-btn-master-field">
+        <option value="">Selecione...</option>
+      </select>
+      <div class="help-text">Identifica a linha a transferir — não aparece no formulário de ação.</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label required">Tabela de destino</label>
+      <select class="form-select" id="action-btn-dest-table" onchange="toggleDestTable()">
+        <option value="__new__">Criar nova tabela automaticamente</option>
+      </select>
+    </div>
+    <div class="sidebar-section-title" style="margin:16px 0 10px;">Comportamento da tabela de origem</div>
+    <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px;">
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+        <input type="radio" name="action-behavior" value="flow" checked style="margin-top:3px;">
+        <div>
+          <div style="font-weight:600;font-size:13px;">Fluxo (subtrai/remove)</div>
+          <div class="help-text">Subtrai valor informado. Remove linha ao zerar. Bloqueia se ficaria negativo.</div>
+        </div>
+      </label>
+      <label style="display:flex;align-items:flex-start;gap:10px;cursor:pointer;">
+        <input type="radio" name="action-behavior" value="history" style="margin-top:3px;">
+        <div>
+          <div style="font-weight:600;font-size:13px;">Histórico (linha permanece)</div>
+          <div class="help-text">Linha nunca é removida. Só ADM Master pode excluir.</div>
+        </div>
+      </label>
+    </div>
+    <div class="sidebar-section-title" style="margin-bottom:10px;">Campos adicionais do formulário</div>
+    <div id="action-extra-fields-list"></div>
+    <button class="btn btn-secondary btn-sm" onclick="addActionExtraField()">+ Campo ao formulário</button>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-new-action-btn')">Cancelar</button>
+      <button class="btn btn-primary" onclick="createActionBtn()">Criar botão</button>
+    </div>
+  </div>
+</div>
+
+<!-- FILL FORM (Formulário) -->
+<div class="modal-overlay" id="modal-fill-form">
+  <div class="modal modal-lg">
+    <div class="modal-title" id="fill-form-title">Preencher formulário</div>
+    <div id="fill-form-fields"></div>
+    <div id="fill-form-images" class="images-section" style="display:none;">
+      <div class="form-label" style="margin-bottom:8px;">📷 Imagens</div>
+      <div class="image-grid" id="fill-form-image-grid">
+        <button class="add-image-btn" onclick="triggerImageUpload('fill-form-img-input')">+</button>
+        <input type="file" id="fill-form-img-input" accept="image/*" multiple style="display:none" onchange="handleImageUpload(this,'fill-form-image-grid')">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-fill-form')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveFillForm()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- EXECUTE ACTION -->
+<div class="modal-overlay" id="modal-execute-action">
+  <div class="modal">
+    <div class="modal-title" id="exec-action-title">Executar ação</div>
+    <div id="exec-action-fields"></div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-execute-action')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmAction()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<!-- REGISTER MULTI-LINE -->
+<div class="modal-overlay" id="modal-register-multi">
+  <div class="modal modal-lg">
+    <div class="modal-title" id="register-multi-title">Registrar</div>
+    <div id="register-multi-rows"></div>
+    <button class="btn btn-secondary btn-sm" onclick="addMultiRow()" style="margin-top:8px;">+ Linha</button>
+    <div id="register-multi-images" class="images-section" style="display:none;">
+      <div class="form-label" style="margin-bottom:8px;">📷 Imagens</div>
+      <div class="image-grid" id="register-multi-image-grid">
+        <button class="add-image-btn" onclick="triggerImageUpload('register-multi-img-input')">+</button>
+        <input type="file" id="register-multi-img-input" accept="image/*" multiple style="display:none" onchange="handleImageUpload(this,'register-multi-image-grid')">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-register-multi')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveMultiRegister()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- EMAIL GROUPS -->
+<div class="modal-overlay" id="modal-email-groups">
+  <div class="modal modal-lg">
+    <div class="modal-title">Grupos de E-mail</div>
+    <div class="modal-subtitle">Crie grupos para usar nos formulários com envio de e-mail.</div>
+    <div id="email-groups-list"></div>
+    <button class="btn btn-secondary btn-sm" onclick="addEmailGroup()" style="margin-top:10px;">+ Grupo</button>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveEmailGroups()">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ACTION EXTRA FIELD -->
+<div class="modal-overlay" id="modal-action-extra-field">
+  <div class="modal">
+    <div class="modal-title">Campo adicional</div>
+    <div class="form-group">
+      <label class="form-label required">Nome</label>
+      <input type="text" class="form-input" id="extra-field-name" placeholder="Nome">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tipo</label>
+      <select class="form-select" id="extra-field-type" onchange="onExtraFieldTypeChange()">
+        <option value="text">Texto</option>
+        <option value="number">Número</option>
+        <option value="currency">Moeda (R$)</option>
+        <option value="percent">Percentual (%)</option>
+        <option value="date">Data</option>
+        <option value="time">Hora</option>
+        <option value="boolean">Sim / Não</option>
+        <option value="select">Selecionável</option>
+      </select>
+    </div>
+    <div id="extra-field-link-group" style="display:none;" class="form-group">
+      <label class="form-label">Vincular com cadastro</label>
+      <select class="form-select" id="extra-field-link-table"></select>
+    </div>
+    <div class="toggle-row">
+      <div><div class="toggle-label">Obrigatório</div></div>
+      <label class="toggle"><input type="checkbox" id="extra-field-required"><span class="toggle-slider"></span></label>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-action-extra-field')">Cancelar</button>
+      <button class="btn btn-primary" onclick="confirmActionExtraField()">Adicionar</button>
+    </div>
+  </div>
+</div>
+
+<!-- RENAME TABLE -->
+<div class="modal-overlay" id="modal-rename">
+  <div class="modal" style="width:360px;">
+    <div class="modal-title">Renomear tabela</div>
+    <div class="form-group">
+      <label class="form-label">Novo nome</label>
+      <input type="text" class="form-input" id="rename-input">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-rename')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveRename()">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONDITIONAL RULES -->
+<div class="modal-overlay" id="modal-conditional-rules">
+  <div class="modal modal-lg">
+    <div class="modal-title">Regras Condicionais — <span id="cond-screen-name" style="color:var(--accent2)"></span></div>
+    <div class="modal-subtitle">Defina lógica IF/ELSE para controlar o comportamento dos campos durante o preenchimento.</div>
+    <div id="cond-rules-list"></div>
+    <button class="btn btn-secondary btn-sm" onclick="addCondRule()" style="margin-top:10px;">Nova regra condicional</button>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-conditional-rules')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveCondRules()">Salvar regras</button>
+    </div>
+  </div>
+</div>
+
+<!-- SALDO CONFIG -->
+<div class="modal-overlay" id="modal-saldo-config">
+  <div class="modal modal-lg">
+    <div class="modal-title">Configuração de Saldo e Valor</div>
+    <div class="modal-subtitle">Define qual campo numérico controla o saldo principal e qual é tratado como valor médio por unidade.</div>
+    <div class="info-box">
+      <strong>Como funciona:</strong><br>
+      O campo mestre de saldo é a quantidade controlada. O campo de valor médio é o preço por unidade — recalculado automaticamente a cada entrada. O campo total é derivado (saldo × valor médio).
+    </div>
+    <div class="form-group">
+      <label class="form-label required">Campo mestre de saldo</label>
+      <select class="form-select" id="saldo-field-qty">
+        <option value="">Nenhum</option>
+      </select>
+      <div class="help-text">Campo que representa a quantidade em estoque/saldo.</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Campo de valor médio (por unidade)</label>
+      <select class="form-select" id="saldo-field-unit">
+        <option value="">Nenhum</option>
+      </select>
+      <div class="help-text">Preço unitário — recalculado pela média ponderada a cada nova entrada.</div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Campo total derivado (calculado automaticamente)</label>
+      <select class="form-select" id="saldo-field-total">
+        <option value="">Nenhum</option>
+      </select>
+      <div class="help-text">Resultado de saldo × valor médio. Nunca inserido manualmente.</div>
+    </div>
+    <div class="divider"></div>
+    <div class="sidebar-section-title" style="margin-bottom:10px;">Tabela de Histórico</div>
+    <div class="help-text" style="margin-bottom:12px;">Cria automaticamente uma tabela separada de auditoria (somente leitura). Registra cada entrada/saída sem controlar saldo.</div>
+    <div class="toggle-row">
+      <div><div class="toggle-label">Ativar tabela de histórico</div></div>
+      <label class="toggle"><input type="checkbox" id="saldo-history-toggle" onchange="toggleHistoryName()"><span class="toggle-slider"></span></label>
+    </div>
+    <div id="saldo-history-name-group" style="display:none;margin-top:12px;">
+      <div class="form-group">
+        <label class="form-label">Nome da tabela de histórico</label>
+        <input type="text" class="form-input" id="saldo-history-name" placeholder="Ex: Histórico de estoque">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-saldo-config')">Cancelar</button>
+      <button class="btn btn-primary" onclick="saveSaldoConfig()">Salvar configuração</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM -->
+<div class="modal-overlay" id="modal-confirm-delete">
+  <div class="modal" style="width:360px;">
+    <div class="modal-title">Confirmar exclusão</div>
+    <div class="modal-subtitle" id="confirm-delete-msg">Tem certeza? Esta ação não pode ser desfeita.</div>
+    <div class="modal-footer">
+      <button class="btn btn-secondary" onclick="closeModal('modal-confirm-delete')">Cancelar</button>
+      <button class="btn btn-danger" id="confirm-delete-btn">Excluir</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// STATE
+// ============================================================
+let state = {
+  users: [
+    { id: 'u1', name: 'Master', email: 'master@flowgns.com', role: 'master', password: 'master123' }
+  ],
+  currentUser: null,
+  screens: [],       // { id, name, type, fields, records, actionBtns, allowImages, sendEmail, emailGroup, condRules, saldoConfig }
+  emailGroups: [],   // { id, name, emails[] }
+  activeScreenId: null,
+  builderMode: false,
+  calcTokens: [],
+  actionExtraFields: [],
+  editingFieldIndex: null,
+  confirmDeleteCb: null,
+};
+
+const MASTER_PWD = 'master123';
+
+// ============================================================
+// UTILS
+// ============================================================
+function uid() { return Math.random().toString(36).slice(2, 10); }
+
+function fmt(type, val) {
+  if (val === null || val === undefined || val === '') return '—';
+  if (type === 'currency') return 'R$ ' + parseFloat(val).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  if (type === 'percent') return parseFloat(val).toFixed(2) + '%';
+  if (type === 'boolean') return val ? '✅ Sim' : '❌ Não';
+  if (type === 'number') return parseFloat(val).toLocaleString('pt-BR');
+  return val;
+}
+
+function getScreen(id) { return state.screens.find(s => s.id === id); }
+function getActiveScreen() { return getScreen(state.activeScreenId); }
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+  document.getElementById('page-' + p).classList.add('active');
+  document.getElementById('nav-' + p)?.classList.add('active');
+  if (p === 'home') renderHome();
+  if (p === 'builder') renderBuilder();
+  if (p === 'users') renderUsers();
+}
+
+function updateStats() {
+  const totalRecords = state.screens.reduce((a, s) => a + (s.records?.length || 0), 0);
+  const forms = state.screens.filter(s => s.type !== 'cadastro').length;
+  document.getElementById('stat-screens').textContent = state.screens.length;
+  document.getElementById('stat-forms').textContent = forms;
+  document.getElementById('stat-records').textContent = totalRecords;
+}
+
+// ============================================================
+// AUTH
+// ============================================================
+function switchAuthTab(tab) {
+  ['login','register','forgot'].forEach(t => {
+    document.getElementById('tab-' + t).style.display = t === tab ? 'flex' : 'none';
+  });
+  document.querySelectorAll('.auth-tab').forEach((btn, i) => {
+    const tabs = ['login','register'];
+    btn.classList.toggle('active', tabs[i] === tab);
+  });
+}
+
+function doLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pwd = document.getElementById('login-password').value;
+  const user = state.users.find(u => u.email === email && u.password === pwd);
+  if (!user) { showAuthError('login-error', 'E-mail ou senha incorretos.'); return; }
+  loginAs(user);
+}
+
+function doRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pwd = document.getElementById('reg-password').value;
+  if (!name || !email || !pwd) { showAuthError('reg-error', 'Preencha todos os campos.'); return; }
+  if (state.users.find(u => u.email === email)) { showAuthError('reg-error', 'E-mail já cadastrado.'); return; }
+  const user = { id: uid(), name, email, role: 'operator', password: pwd };
+  state.users.push(user);
+  loginAs(user);
+}
+
+function doForgot() {
+  const email = document.getElementById('forgot-email').value.trim();
+  const el = document.getElementById('forgot-msg');
+  if (!state.users.find(u => u.email === email)) {
+    el.style.display = 'block';
+    el.textContent = 'E-mail não encontrado.';
+  } else {
+    el.style.display = 'block';
+    el.style.background = 'rgba(52,199,123,.15)';
+    el.style.borderColor = 'var(--success)';
+    el.style.color = 'var(--success)';
+    el.textContent = 'Link de recuperação enviado (simulado).';
+  }
+}
+
+function showAuthError(id, msg) {
+  const el = document.getElementById(id);
+  el.style.display = 'block';
+  el.textContent = msg;
+}
+
+function loginAs(user) {
+  state.currentUser = user;
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'flex';
+  document.getElementById('user-name-display').textContent = user.name;
+  const badge = document.getElementById('user-role-badge');
+  badge.textContent = user.role === 'master' ? 'MASTER' : 'Operador';
+  badge.className = 'user-badge' + (user.role === 'master' ? ' master-badge' : '');
+  if (user.role === 'master') {
+    document.getElementById('nav-users').style.display = '';
+    state.builderMode = true;
+  }
+  showPage('home');
+}
+
+function doLogout() {
+  state.currentUser = null;
+  state.builderMode = false;
+  document.getElementById('auth-screen').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+// ============================================================
+// MASTER PWD
+// ============================================================
+function checkMasterPwd() {
+  const v = document.getElementById('master-pwd-input').value;
+  if (v === MASTER_PWD) {
+    state.builderMode = true;
+    closeModal('modal-master-pwd');
+    showPage('builder');
+  } else {
+    document.getElementById('master-pwd-error').style.display = 'block';
+  }
+}
+
+// ============================================================
+// HOME
+// ============================================================
+function renderHome() {
+  updateStats();
+  const grid = document.getElementById('home-screens-grid');
+  if (state.screens.length === 0) {
+    grid.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:16px 0;">Selecione uma tela para editar.</div>';
+  } else {
+    grid.innerHTML = state.screens.map(s => `
+      <div class="screen-card${s.id === state.activeScreenId ? ' active-screen' : ''}" onclick="openScreenFromHome('${s.id}')">
+        <div class="screen-type-badge">${{cadastro:'Cadastro',formulario:'Formulário',formulario_multi:'Formulário multi-linha'}[s.type] || s.type}</div>
+        <div class="screen-name">${s.name}</div>
+        <div class="screen-count">${s.records?.length || 0} registros · ${s.fields?.length || 0} campos</div>
+      </div>
+    `).join('');
+  }
+  // email groups preview
+  const eg = document.getElementById('home-email-groups-preview');
+  eg.innerHTML = state.emailGroups.length === 0
+    ? '<span style="color:var(--text2);font-size:13px;">Nenhum grupo criado.</span>'
+    : state.emailGroups.map(g => `<span class="email-chip">${g.name} (${g.emails.length})</span>`).join('');
+}
+
+function openScreenFromHome(id) {
+  state.activeScreenId = id;
+  showPage('builder');
+}
+
+// ============================================================
+// BUILDER
+// ============================================================
+function renderBuilder() {
+  renderSidebarScreens();
+  if (state.activeScreenId) renderBuilderMain();
+}
+
+function renderSidebarScreens() {
+  const list = document.getElementById('sidebar-screens-list');
+  list.innerHTML = state.screens.map(s => `
+    <button class="sidebar-btn${s.id === state.activeScreenId ? ' active' : ''}" onclick="selectScreen('${s.id}')" style="${s.id === state.activeScreenId ? 'background:var(--surface2);border-color:var(--border);color:var(--text);' : ''}">
+      <span style="font-size:11px;opacity:.6">${{cadastro:'📋',formulario:'📝',formulario_multi:'📑'}[s.type]||'📄'}</span>
+      ${s.name}
+    </button>
+  `).join('');
+}
+
+function selectScreen(id) {
+  state.activeScreenId = id;
+  document.getElementById('sidebar-actions-section').style.display = '';
+  renderSidebarScreens();
+  renderBuilderMain();
+}
+
+function renderBuilderMain() {
+  const screen = getActiveScreen();
+  if (!screen) return;
+  const main = document.getElementById('builder-main');
+
+  let html = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;">
+      <div>
+        <div style="font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;">${{cadastro:'Cadastro',formulario:'Formulário',formulario_multi:'Formulário multi-linha'}[screen.type]}</div>
+        <div style="font-size:20px;font-weight:800;">${screen.name}</div>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+  `;
+
+  if (screen.type === 'formulario' || screen.type === 'formulario_multi') {
+    html += `<button class="btn btn-primary btn-sm" onclick="openFillForm('${screen.id}')">Registrar</button>`;
+  }
+  if (screen.type === 'cadastro') {
+    html += `<button class="btn btn-secondary btn-sm" onclick="openAddField()">+ Campo</button>`;
+  }
+  html += `</div></div>`;
+
+  // Fields info
+  html += `
+    <div style="margin-bottom:20px;">
+      <div class="sidebar-section-title" style="margin-bottom:10px;">Campos</div>
+      ${screen.fields.length === 0
+        ? '<div style="color:var(--text2);font-size:13px;padding:8px 0;">Nenhum campo criado. Adicione campos pela barra lateral.</div>'
+        : `<div class="fields-list">${screen.fields.map((f, i) => renderFieldRow(f, i, screen)).join('')}</div>`
+      }
+    </div>
+  `;
+
+  // Action buttons
+  if (screen.actionBtns?.length > 0) {
+    html += `<div style="margin-bottom:20px;"><div class="sidebar-section-title" style="margin-bottom:10px;">Botões de ação</div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        ${screen.actionBtns.map((b, i) => `<button class="btn btn-secondary btn-sm" onclick="openExecuteAction('${screen.id}','${b.id}')">${b.name}</button>`).join('')}
+      </div></div>`;
+  }
+
+  // Records / data
+  html += renderScreenData(screen);
+  main.innerHTML = html;
+}
+
+function renderFieldRow(f, i, screen) {
+  const badges = [];
+  if (f.master) badges.push('<span class="field-badge badge-master">mestre</span>');
+  if (f.sum) badges.push('<span class="field-badge badge-sum">soma</span>');
+  if (f.unique) badges.push('<span class="field-badge badge-unique">único</span>');
+  if (f.required) badges.push('<span class="field-badge badge-required">obrig.</span>');
+  return `
+    <div class="field-row">
+      <div class="field-name">${f.name}</div>
+      <div class="field-type">${fieldTypeLabel(f.type)}</div>
+      <div style="display:flex;gap:4px;">${badges.join('')}</div>
+      <div></div>
+      ${state.builderMode ? `<div class="tbl-actions">
+        <button class="tbl-action-btn danger" onclick="deleteField(${i})">✕</button>
+      </div>` : ''}
+    </div>
+  `;
+}
+
+function fieldTypeLabel(t) {
+  const m = {text:'Texto',number:'Número',currency:'Moeda',percent:'%',date:'Data',time:'Hora',boolean:'Sim/Não',select:'Selecionável',calc:'Calculado',mask:'Máscara'};
+  return m[t] || t;
+}
+
+// ============================================================
+// RENDER SCREEN DATA (SUMMARY TABLE + HISTORY TABLE) — CORRECTED
+// ============================================================
+function renderScreenData(screen) {
+  if (!screen.records || screen.records.length === 0) {
+    return `<div class="empty-table">Nenhum registro ainda.</div>`;
+  }
+
+  const saldoCfg = screen.saldoConfig;
+  const hasSaldoConfig = saldoCfg && saldoCfg.qtyFieldId;
+
+  if (hasSaldoConfig) {
+    // Render: Summary table (top) + History table (bottom)
+    return renderSaldoTables(screen);
+  }
+
+  // Default: single data table
+  return renderDefaultTable(screen);
+}
+
+// ------ DEFAULT TABLE (no saldo config) ------
+function renderDefaultTable(screen) {
+  const fields = screen.fields.filter(f => !f.isAudit);
+  const auditFields = screen.fields.filter(f => f.isAudit);
+  const allCols = [...fields, ...auditFields];
+
+  let html = `<div class="table-wrapper"><table class="data-table">`;
+
+  // THEAD
+  html += `<thead><tr>`;
+  allCols.forEach(f => {
+    html += `<th>${f.name}</th>`;
+  });
+  html += `<th></th></tr></thead>`;
+
+  // TBODY
+  html += `<tbody>`;
+  screen.records.forEach((rec, ri) => {
+    html += `<tr>`;
+    allCols.forEach(f => {
+      const isNum = ['number','currency','percent'].includes(f.type);
+      const isMaster = f.master;
+      html += `<td class="${isMaster ? 'master-col' : ''}${isNum ? ' num-col' : ''}${f.isAudit ? ' audit-col' : ''}">${fmt(f.type, rec[f.id])}</td>`;
+    });
+    // Actions
+    html += `<td><div class="tbl-actions">`;
+    if (state.currentUser?.role === 'master') {
+      html += `<button class="tbl-action-btn danger" onclick="deleteRecord('${screen.id}',${ri})">✕</button>`;
+    }
+    html += `</div></td></tr>`;
+  });
+  html += `</tbody>`;
+
+  // TFOOT — sum fields
+  const sumFields = fields.filter(f => f.sum);
+  if (sumFields.length > 0) {
+    html += `<tfoot><tr>`;
+    allCols.forEach((f, ci) => {
+      if (ci === 0) { html += `<td>Total</td>`; return; }
+      if (f.sum) {
+        const total = screen.records.reduce((a, r) => a + (parseFloat(r[f.id]) || 0), 0);
+        html += `<td>${fmt(f.type, total)}</td>`;
+      } else {
+        html += `<td></td>`;
+      }
+    });
+    html += `<td></td></tr></tfoot>`;
+  }
+
+  html += `</table></div>`;
+  return html;
+}
+
+// ------ SALDO TABLES (summary + history) ------
+function renderSaldoTables(screen) {
+  const saldoCfg = screen.saldoConfig;
+  const qtyField = screen.fields.find(f => f.id === saldoCfg.qtyFieldId);
+  const unitField = saldoCfg.unitFieldId ? screen.fields.find(f => f.id === saldoCfg.unitFieldId) : null;
+  const totalField = saldoCfg.totalFieldId ? screen.fields.find(f => f.id === saldoCfg.totalFieldId) : null;
+  const masterField = screen.fields.find(f => f.master);
+
+  // Build summary: group records by master field value
+  const summaryMap = {};
+  screen.records.forEach(rec => {
+    const key = masterField ? (rec[masterField.id] || '—') : '—';
+    if (!summaryMap[key]) {
+      summaryMap[key] = { qty: 0, weightedUnit: 0, totalQtyForAvg: 0 };
+    }
+    const qty = parseFloat(rec[qtyField?.id] || 0);
+    const unit = unitField ? parseFloat(rec[unitField.id] || 0) : 0;
+    summaryMap[key].qty += qty;
+    summaryMap[key].weightedUnit += qty * unit;
+    summaryMap[key].totalQtyForAvg += qty;
+  });
+
+  // Build summary rows: [master, qty (saldo), unit (avg), total (qty*avg)]
+  const summaryRows = Object.entries(summaryMap).map(([key, data]) => {
+    const avgUnit = data.totalQtyForAvg > 0 ? data.weightedUnit / data.totalQtyForAvg : 0;
+    const derivedTotal = data.qty * avgUnit;
+    return { master: key, qty: data.qty, avgUnit, derivedTotal };
+  });
+
+  // Summary columns
+  const summaryCols = [
+    { label: masterField ? masterField.name : 'Item', key: 'master', type: 'text', isMaster: true },
+    { label: qtyField ? qtyField.name : 'Saldo', key: 'qty', type: qtyField?.type || 'number', isMaster: false },
+  ];
+  if (unitField) summaryCols.push({ label: unitField.name, key: 'avgUnit', type: unitField.type, isMaster: false });
+  if (totalField) summaryCols.push({ label: totalField.name, key: 'derivedTotal', type: totalField.type, isMaster: false });
+
+  // ---- SUMMARY TABLE HTML ----
+  let html = `<div class="summary-table-wrapper">`;
+  html += `<div class="summary-table-label">🗂 Somatória — consolidado por item</div>`;
+  html += `<div class="table-wrapper"><table class="data-table">`;
+
+  // thead
+  html += `<thead><tr>`;
+  summaryCols.forEach(col => {
+    html += `<th>${escHtml(col.label)}</th>`;
+  });
+  html += `</tr></thead>`;
+
+  // tbody
+  html += `<tbody>`;
+  if (summaryRows.length === 0) {
+    html += `<tr><td colspan="${summaryCols.length}" class="empty-table">Nenhum registro.</td></tr>`;
+  } else {
+    summaryRows.forEach(row => {
+      html += `<tr>`;
+      summaryCols.forEach(col => {
+        const isNum = ['number','currency','percent'].includes(col.type);
+        html += `<td class="${col.isMaster ? 'master-col' : ''}${isNum ? ' num-col' : ''}">${fmt(col.type, row[col.key])}</td>`;
+      });
+      html += `</tr>`;
+    });
+  }
+  html += `</tbody>`;
+
+  // tfoot totals for summary
+  html += `<tfoot><tr>`;
+  summaryCols.forEach((col, ci) => {
+    if (ci === 0) { html += `<td style="text-align:left;">Total</td>`; return; }
+    if (col.key === 'qty') {
+      const t = summaryRows.reduce((a, r) => a + r.qty, 0);
+      html += `<td>${fmt(col.type, t)}</td>`;
+    } else if (col.key === 'derivedTotal') {
+      const t = summaryRows.reduce((a, r) => a + r.derivedTotal, 0);
+      html += `<td>${fmt(col.type, t)}</td>`;
+    } else {
+      html += `<td></td>`;
+    }
+  });
+  html += `</tr></tfoot>`;
+
+  html += `</table></div></div>`;
+
+  // ---- HISTORY TABLE HTML ----
+  // Columns = all form fields + audit fields
+  const histFields = screen.fields.filter(f => !f.isAudit);
+  const auditFields = screen.fields.filter(f => f.isAudit);
+  const allHistCols = [...histFields, ...auditFields];
+
+  html += `<div class="history-table-label">📋 Histórico — lançamentos individuais</div>`;
+  html += `<div class="table-wrapper"><table class="data-table">`;
+
+  // thead
+  html += `<thead><tr>`;
+  allHistCols.forEach(f => {
+    html += `<th>${escHtml(f.name)}</th>`;
+  });
+  html += `<th></th></tr></thead>`;
+
+  // tbody
+  html += `<tbody>`;
+  screen.records.forEach((rec, ri) => {
+    html += `<tr>`;
+    allHistCols.forEach(f => {
+      const isNum = ['number','currency','percent'].includes(f.type);
+      const isMaster = f.master;
+      html += `<td class="${isMaster ? 'master-col' : ''}${isNum ? ' num-col' : ''}${f.isAudit ? ' audit-col' : ''}">${escHtml(fmt(f.type, rec[f.id]))}</td>`;
+    });
+    // Action column
+    html += `<td><div class="tbl-actions">`;
+    if (state.currentUser?.role === 'master') {
+      html += `<button class="tbl-action-btn danger" onclick="deleteRecord('${screen.id}',${ri})">✕</button>`;
+    }
+    html += `</div></td></tr>`;
+  });
+  html += `</tbody></table></div>`;
+
+  return html;
+}
+
+function escHtml(str) {
+  if (str === null || str === undefined) return '';
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ============================================================
+// SCREENS
+// ============================================================
+function createScreen() {
+  const type = document.getElementById('new-screen-type').value;
+  const name = document.getElementById('new-screen-name').value.trim();
+  if (!name) { alert('Digite um nome para a tela.'); return; }
+
+  const allowImages = document.getElementById('new-screen-images').checked;
+  const sendEmail = document.getElementById('new-screen-email').checked;
+  const emailGroup = document.getElementById('new-screen-email-group').value;
+
+  const screen = {
+    id: uid(),
+    name,
+    type: type.replace('-','_'),
+    fields: [],
+    records: [],
+    actionBtns: [],
+    allowImages,
+    sendEmail,
+    emailGroup,
+    condRules: [],
+    saldoConfig: null,
+  };
+  state.screens.push(screen);
+  state.activeScreenId = screen.id;
+  closeModal('modal-new-screen');
+  document.getElementById('new-screen-name').value = '';
+  document.getElementById('sidebar-actions-section').style.display = '';
+  renderSidebarScreens();
+  renderBuilderMain();
+  updateStats();
+  renderHome();
+}
+
+function deleteCurrentScreen() {
+  if (!state.activeScreenId) return;
+  showConfirmDelete('Excluir esta tela e todos os seus dados?', () => {
+    state.screens = state.screens.filter(s => s.id !== state.activeScreenId);
+    state.activeScreenId = null;
+    document.getElementById('sidebar-actions-section').style.display = 'none';
+    renderSidebarScreens();
+    document.getElementById('builder-main').innerHTML = `<div style="color:var(--text2);text-align:center;padding:48px 0;"><div style="font-size:32px;margin-bottom:12px;">🧩</div><div>Selecione uma tela para editar.</div></div>`;
+    updateStats();
+  });
+}
+
+// ============================================================
+// FIELDS
+// ============================================================
+function openAddField() {
+  if (!state.activeScreenId) return;
+  // Reset
+  document.getElementById('field-name').value = '';
+  document.getElementById('field-type').value = 'text';
+  document.getElementById('field-required').checked = false;
+  document.getElementById('field-master').checked = false;
+  document.getElementById('field-unique').checked = false;
+  document.getElementById('field-sum').checked = false;
+  state.calcTokens = [];
+  renderCalcDisplay();
+  onFieldTypeChange();
+  populateCalcFieldSelect();
+  populateLinkTables();
+  openModal('modal-new-field');
+}
+
+function onFieldTypeChange() {
+  const t = document.getElementById('field-type').value;
+  document.getElementById('field-select-opts').style.display = t === 'select' ? '' : 'none';
+  document.getElementById('field-mask-opts').style.display = t === 'mask' ? '' : 'none';
+  document.getElementById('field-calc-opts').style.display = t === 'calc' ? '' : 'none';
+}
+
+function toggleCustomMask() {
+  const v = document.getElementById('field-mask-type').value;
+  document.getElementById('custom-mask-input').style.display = v === 'custom' ? '' : 'none';
+}
+
+function populateLinkTables() {
+  const sel = document.getElementById('field-link-table');
+  sel.innerHTML = '<option value="">— Selecione —</option>' +
+    state.screens.filter(s => s.type === 'cadastro' && s.id !== state.activeScreenId).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+}
+
+function addField() {
+  const screen = getActiveScreen();
+  if (!screen) return;
+  const name = document.getElementById('field-name').value.trim();
+  if (!name) { alert('Digite um nome.'); return; }
+  const type = document.getElementById('field-type').value;
+  const field = {
+    id: uid(),
+    name,
+    type,
+    required: document.getElementById('field-required').checked,
+    master: document.getElementById('field-master').checked,
+    unique: document.getElementById('field-unique').checked,
+    sum: document.getElementById('field-sum').checked,
+  };
+  if (type === 'select') field.linkTable = document.getElementById('field-link-table').value;
+  if (type === 'mask') { field.maskType = document.getElementById('field-mask-type').value; field.customMask = document.getElementById('field-custom-mask').value; }
+  if (type === 'calc') { field.calcExpression = document.getElementById('calc-expression').value; field.calcTokens = [...state.calcTokens]; }
+  screen.fields.push(field);
+  closeModal('modal-new-field');
+  renderBuilderMain();
+}
+
+function deleteField(i) {
+  const screen = getActiveScreen();
+  if (!screen) return;
+  showConfirmDelete(`Excluir o campo "${screen.fields[i].name}"?`, () => {
+    screen.fields.splice(i, 1);
+    renderBuilderMain();
+  });
+}
+
+// ============================================================
+// CALC BUILDER
+// ============================================================
+function populateCalcFieldSelect() {
+  const screen = getActiveScreen();
+  const sel = document.getElementById('calc-field-select');
+  sel.innerHTML = '<option value="">+ campo…</option>' +
+    (screen ? screen.fields.map(f => `<option value="${f.id}" data-name="${f.name}">${f.name}</option>`).join('') : '');
+  sel.onchange = () => {
+    const opt = sel.options[sel.selectedIndex];
+    if (opt.value) { addCalcToken('field', opt.value, opt.dataset.name); sel.value = ''; }
+  };
+}
+
+function addCalcToken(kind, val, label) {
+  if (kind === 'field') {
+    state.calcTokens.push({ kind: 'field', val, label });
+  } else {
+    state.calcTokens.push({ kind: 'op', val });
+  }
+  updateCalcExpression();
+  renderCalcDisplay();
+}
+
+function clearCalcExpr() { state.calcTokens = []; updateCalcExpression(); renderCalcDisplay(); }
+
+function updateCalcExpression() {
+  document.getElementById('calc-expression').value = JSON.stringify(state.calcTokens);
+}
+
+function renderCalcDisplay() {
+  const d = document.getElementById('calc-display');
+  if (!d) return;
+  d.innerHTML = state.calcTokens.map(t =>
+    t.kind === 'field'
+      ? `<span class="calc-token">${escHtml(t.label || t.val)}</span>`
+      : `<span class="calc-op">${t.val}</span>`
+  ).join(' ') || '<span style="color:var(--text2);font-size:12px;">Expressão vazia</span>';
+}
+
+// ============================================================
+// FILL FORM
+// ============================================================
+function openFillForm(screenId) {
+  const screen = getScreen(screenId);
+  if (!screen) return;
+  document.getElementById('fill-form-title').textContent = screen.name;
+  const container = document.getElementById('fill-form-fields');
+  container.innerHTML = '';
+  container.dataset.screenId = screenId;
+
+  if (screen.type === 'formulario_multi') {
+    openModal('modal-register-multi');
+    setupMultiRegister(screen);
+    return;
+  }
+
+  screen.fields.filter(f => !f.isAudit).forEach(f => {
+    container.appendChild(buildFormField(f, screen));
+  });
+
+  const imgSec = document.getElementById('fill-form-images');
+  imgSec.style.display = screen.allowImages ? '' : 'none';
+
+  openModal('modal-fill-form');
+}
+
+function buildFormField(f, screen, prefix) {
+  prefix = prefix || '';
+  const wrap = document.createElement('div');
+  wrap.className = 'form-fill-field';
+  const label = document.createElement('label');
+  label.className = 'form-label' + (f.required ? ' required' : '');
+  label.textContent = f.name;
+  wrap.appendChild(label);
+
+  let input;
+  if (f.type === 'boolean') {
+    input = document.createElement('select');
+    input.innerHTML = '<option value="">—</option><option value="true">Sim</option><option value="false">Não</option>';
+  } else if (f.type === 'select') {
+    input = document.createElement('select');
+    const linked = state.screens.find(s => s.id === f.linkTable);
+    input.innerHTML = '<option value="">— Selecione —</option>' + (linked ? linked.records.map((r, ri) => {
+      const master = linked.fields.find(lf => lf.master);
+      return `<option value="${ri}">${master ? r[master.id] : 'Linha '+(ri+1)}</option>`;
+    }).join('') : '');
+  } else if (f.type === 'date') {
+    input = document.createElement('input');
+    input.type = 'date';
+  } else if (f.type === 'time') {
+    input = document.createElement('input');
+    input.type = 'time';
+  } else {
+    input = document.createElement('input');
+    input.type = ['number','currency','percent'].includes(f.type) ? 'number' : 'text';
+    input.step = f.type === 'currency' ? '0.01' : '';
+    if (f.type === 'mask') input.placeholder = maskPlaceholder(f.maskType);
+  }
+  input.className = ['boolean','select'].includes(f.type) ? 'form-select' : 'form-input';
+  input.id = prefix + 'field_' + f.id;
+  wrap.appendChild(input);
+  return wrap;
+}
+
+function maskPlaceholder(t) {
+  const m = {cpf:'000.000.000-00',cnpj:'00.000.000/0000-00',phone:'(00) 0000-0000',cell:'(00) 00000-0000',cep:'00000-000',date_m:'00/00/0000',plate:'AAA-0000'};
+  return m[t] || '';
+}
+
+function saveFillForm() {
+  const screen = getScreen(document.getElementById('fill-form-fields').dataset.screenId);
+  if (!screen) return;
+
+  const rec = {};
+  screen.fields.filter(f => !f.isAudit).forEach(f => {
+    const el = document.getElementById('field_' + f.id);
+    if (el) rec[f.id] = el.value;
+  });
+
+  // Auto-compute calc fields
+  screen.fields.filter(f => f.type === 'calc').forEach(f => {
+    rec[f.id] = evaluateCalc(f.calcTokens, rec, screen.fields);
+  });
+
+  // Audit fields
+  rec['_createdAt'] = new Date().toLocaleString('pt-BR');
+  rec['_createdBy'] = state.currentUser?.name || '';
+
+  screen.records.push(rec);
+  closeModal('modal-fill-form');
+  renderBuilderMain();
+  updateStats();
+}
+
+function evaluateCalc(tokens, rec, fields) {
+  if (!tokens || tokens.length === 0) return '';
+  try {
+    const expr = tokens.map(t => {
+      if (t.kind === 'field') return parseFloat(rec[t.val] || 0);
+      if (t.val === '−') return '-';
+      if (t.val === '×') return '*';
+      if (t.val === '÷') return '/';
+      return t.val;
+    }).join(' ');
+    return eval(expr);
+  } catch { return 0; }
+}
+
+// ============================================================
+// MULTI-LINE REGISTER
+// ============================================================
+function setupMultiRegister(screen) {
+  document.getElementById('register-multi-title').textContent = screen.name;
+  document.getElementById('register-multi-rows').dataset.screenId = screen.id;
+  document.getElementById('register-multi-rows').innerHTML = '';
+  document.getElementById('register-multi-images').style.display = screen.allowImages ? '' : 'none';
+  addMultiRow();
+}
+
+function addMultiRow() {
+  const screenId = document.getElementById('register-multi-rows').dataset.screenId;
+  const screen = getScreen(screenId);
+  if (!screen) return;
+  const rowId = uid();
+  const row = document.createElement('div');
+  row.className = 'multi-line-row';
+  row.dataset.rowId = rowId;
+  screen.fields.filter(f => !f.isAudit).forEach(f => {
+    row.appendChild(buildFormField(f, screen, rowId + '_'));
+  });
+  const del = document.createElement('button');
+  del.className = 'btn-icon';
+  del.textContent = '✕';
+  del.style.marginTop = '22px';
+  del.onclick = () => row.remove();
+  row.appendChild(del);
+  document.getElementById('register-multi-rows').appendChild(row);
+}
+
+function saveMultiRegister() {
+  const screenId = document.getElementById('register-multi-rows').dataset.screenId;
+  const screen = getScreen(screenId);
+  if (!screen) return;
+  document.querySelectorAll('#register-multi-rows .multi-line-row').forEach(row => {
+    const rowId = row.dataset.rowId;
+    const rec = {};
+    screen.fields.filter(f => !f.isAudit).forEach(f => {
+      const el = document.getElementById(rowId + '_field_' + f.id);
+      if (el) rec[f.id] = el.value;
+    });
+    rec['_createdAt'] = new Date().toLocaleString('pt-BR');
+    rec['_createdBy'] = state.currentUser?.name || '';
+    screen.records.push(rec);
+  });
+  closeModal('modal-register-multi');
+  renderBuilderMain();
+  updateStats();
+}
+
+// ============================================================
+// RECORDS
+// ============================================================
+function deleteRecord(screenId, ri) {
+  const screen = getScreen(screenId);
+  if (!screen) return;
+  if (state.currentUser?.role !== 'master') { alert('Apenas o Master pode excluir registros.'); return; }
+  showConfirmDelete('Excluir este registro?', () => {
+    screen.records.splice(ri, 1);
+    renderBuilderMain();
+    updateStats();
+  });
+}
+
+// ============================================================
+// ACTION BUTTONS
+// ============================================================
+function addActionExtraField() {
+  document.getElementById('extra-field-name').value = '';
+  document.getElementById('extra-field-type').value = 'text';
+  document.getElementById('extra-field-required').checked = false;
+  populateExtraFieldLinkTables();
+  openModal('modal-action-extra-field');
+}
+
+function onExtraFieldTypeChange() {
+  const t = document.getElementById('extra-field-type').value;
+  document.getElementById('extra-field-link-group').style.display = t === 'select' ? '' : 'none';
+}
+
+function populateExtraFieldLinkTables() {
+  const sel = document.getElementById('extra-field-link-table');
+  sel.innerHTML = state.screens.filter(s => s.type === 'cadastro').map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+}
+
+function confirmActionExtraField() {
+  const name = document.getElementById('extra-field-name').value.trim();
+  if (!name) { alert('Digite um nome.'); return; }
+  const f = {
+    id: uid(), name,
+    type: document.getElementById('extra-field-type').value,
+    required: document.getElementById('extra-field-required').checked,
+    linkTable: document.getElementById('extra-field-link-table').value,
+  };
+  state.actionExtraFields.push(f);
+  renderActionExtraFields();
+  closeModal('modal-action-extra-field');
+}
+
+function renderActionExtraFields() {
+  const list = document.getElementById('action-extra-fields-list');
+  list.innerHTML = state.actionExtraFields.map((f, i) => `
+    <div class="field-row" style="margin-bottom:4px;">
+      <div class="field-name">${escHtml(f.name)}</div>
+      <div class="field-type">${fieldTypeLabel(f.type)}</div>
+      <div></div><div></div>
+      <button class="tbl-action-btn danger" onclick="removeActionExtraField(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeActionExtraField(i) { state.actionExtraFields.splice(i, 1); renderActionExtraFields(); }
+
+function createActionBtn() {
+  const screen = getActiveScreen();
+  if (!screen) return;
+  const name = document.getElementById('action-btn-name').value.trim();
+  if (!name) { alert('Digite um nome para o botão.'); return; }
+  const behavior = document.querySelector('input[name="action-behavior"]:checked')?.value || 'flow';
+  const btn = {
+    id: uid(), name, behavior,
+    masterField: document.getElementById('action-btn-master-field').value,
+    destTable: document.getElementById('action-btn-dest-table').value,
+    extraFields: [...state.actionExtraFields],
+  };
+  screen.actionBtns = screen.actionBtns || [];
+  screen.actionBtns.push(btn);
+  state.actionExtraFields = [];
+  closeModal('modal-new-action-btn');
+  renderBuilderMain();
+}
+
+function openExecuteAction(screenId, btnId) {
+  const screen = getScreen(screenId);
+  const btn = screen?.actionBtns?.find(b => b.id === btnId);
+  if (!screen || !btn) return;
+  document.getElementById('exec-action-title').textContent = btn.name;
+  const container = document.getElementById('exec-action-fields');
+  container.innerHTML = '';
+  container.dataset.screenId = screenId;
+  container.dataset.btnId = btnId;
+  btn.extraFields?.forEach(f => container.appendChild(buildFormField(f, screen, 'exec_')));
+  openModal('modal-execute-action');
+}
+
+function confirmAction() {
+  // Action execution logic (simplified)
+  closeModal('modal-execute-action');
+  alert('Ação executada com sucesso!');
+}
+
+// ============================================================
+// ACTION BTN MODAL POPULATE
+// ============================================================
+function openNewActionBtn() {
+  const screen = getActiveScreen();
+  if (!screen) return;
+  state.actionExtraFields = [];
+  renderActionExtraFields();
+  // Populate master field select
+  const sel = document.getElementById('action-btn-master-field');
+  sel.innerHTML = '<option value="">Selecione...</option>' + screen.fields.map(f => `<option value="${f.id}">${f.name}</option>`).join('');
+  // Populate dest tables
+  const dSel = document.getElementById('action-btn-dest-table');
+  dSel.innerHTML = '<option value="__new__">Criar nova tabela automaticamente</option>' +
+    state.screens.filter(s => s.id !== screen.id).map(s => `<option value="${s.id}">${s.name}</option>`).join('');
+  openModal('modal-new-action-btn');
+}
+
+// ============================================================
+// RENAME
+// ============================================================
+function openRenameModal() {
+  const screen = getActiveScreen();
+  if (!screen) return;
+  document.getElementById('rename-input').value = screen.name;
+  openModal('modal-rename');
+}
+
+function saveRename() {
+  const screen = getActiveScreen();
+  if (!screen) return;
+  const v = document.getElementById('rename-input').value.trim();
+  if (!v) return;
+  screen.name = v;
+  closeModal('modal-rename');
+  renderSidebarScreens();
+  renderBuilderMain();
+}
+
+// ============================================================
+// CONDITIONAL RULES
+// ============================================================
+function openConditionalRules() {
+  const screen = getActiveScreen();
+  if (!screen) return;
+  document.getElementById('cond-screen-name').textContent = screen.name;
+  renderCondRules(screen);
+  openModal('modal-conditional-rules');
+}
+
+function renderCondRules(screen) {
+  const list = document.getElementById('cond-rules-list');
+  list.innerHTML = (screen.condRules || []).map((r, i) => `
+    <div class="rule-card">
+      <div class="rule-row">
+        <span style="font-size:12px;color:var(--text2);">SE</span>
+        <select class="rule-select" id="cond-if-field-${i}">
+          ${screen.fields.map(f => `<option value="${f.id}" ${r.ifField===f.id?'selected':''}>${f.name}</option>`).join('')}
+        </select>
+        <select class="rule-select" id="cond-op-${i}">
+          ${['igual a','diferente de','maior que','menor que','preenchido','vazio'].map(op => `<option ${r.op===op?'selected':''}>${op}</option>`).join('')}
+        </select>
+        <input class="form-input" style="width:110px;padding:5px 8px;" id="cond-val-${i}" value="${r.val||''}" placeholder="Valor">
+      </div>
+      <div class="rule-row">
+        <span style="font-size:12px;color:var(--text2);">ENTÃO</span>
+        <select class="rule-select" id="cond-then-field-${i}">
+          ${screen.fields.map(f => `<option value="${f.id}" ${r.thenField===f.id?'selected':''}>${f.name}</option>`).join('')}
+        </select>
+        <select class="rule-select" id="cond-then-action-${i}">
+          ${['mostrar','ocultar','tornar obrigatório','tornar opcional'].map(a => `<option ${r.thenAction===a?'selected':''}>${a}</option>`).join('')}
+        </select>
+        <button class="tbl-action-btn danger" onclick="deleteCondRule(${i})">✕</button>
+      </div>
+    </div>
+  `).join('') || '<div style="color:var(--text2);font-size:13px;padding:8px 0;">Nenhuma regra criada.</div>';
+}
+
+function addCondRule() {
+  const screen = getActiveScreen();
+  if (!screen) return;
+  screen.condRules = screen.condRules || [];
+  screen.condRules.push({ ifField: screen.fields[0]?.id || '', op: 'igual a', val: '', thenField: screen.fields[0]?.id || '', thenAction: 'mostrar' });
+  renderCondRules(screen);
+}
+
+function deleteCondRule(i) {
+  const screen = getActiveScreen();
+  if (!screen) return;
+  screen.condRules.splice(i, 1);
+  renderCondRules(screen);
+}
+
+function saveCondRules() {
+  const screen = getActiveScreen();
+  if (!screen) return;
+  screen.condRules = (screen.condRules || []).map((r, i) => ({
+    ifField: document.getElementById(`cond-if-field-${i}`)?.value || '',
+    op: document.getElementById(`cond-op-${i}`)?.value || '',
+    val: document.getElementById(`cond-val-${i}`)?.value || '',
+    thenField: document.getElementById(`cond-then-field-${i}`)?.value || '',
+    thenAction: document.getElementById(`cond-then-action-${i}`)?.value || '',
+  }));
+  closeModal('modal-conditional-rules');
+}
+
+// ============================================================
+// SALDO CONFIG
+// ============================================================
+function openSaldoConfig() {
+  const screen = getActiveScreen();
+  if (!screen) return;
+  const numFields = screen.fields.filter(f => ['number','currency','percent'].includes(f.type));
+  const populateSel = (selId, selected) => {
+    const sel = document.getElementById(selId);
+    sel.innerHTML = '<option value="">Nenhum</option>' + numFields.map(f => `<option value="${f.id}" ${selected===f.id?'selected':''}>${f.name}</option>`).join('');
+  };
+  const cfg = screen.saldoConfig || {};
+  populateSel('saldo-field-qty', cfg.qtyFieldId);
+  populateSel('saldo-field-unit', cfg.unitFieldId);
+  populateSel('saldo-field-total', cfg.totalFieldId);
+  const histToggle = document.getElementById('saldo-history-toggle');
+  histToggle.checked = !!cfg.historyEnabled;
+  toggleHistoryName();
+  document.getElementById('saldo-history-name').value = cfg.historyName || '';
+  openModal('modal-saldo-config');
+}
+
+function toggleHistoryName() {
+  document.getElementById('saldo-history-name-group').style.display = document.getElementById('saldo-history-toggle').checked ? '' : 'none';
+}
+
+function saveSaldoConfig() {
+  const screen = getActiveScreen();
+  if (!screen) return;
+  screen.saldoConfig = {
+    qtyFieldId: document.getElementById('saldo-field-qty').value,
+    unitFieldId: document.getElementById('saldo-field-unit').value,
+    totalFieldId: document.getElementById('saldo-field-total').value,
+    historyEnabled: document.getElementById('saldo-history-toggle').checked,
+    historyName: document.getElementById('saldo-history-name').value,
+  };
+  closeModal('modal-saldo-config');
+  renderBuilderMain();
+}
+
+// ============================================================
+// EMAIL GROUPS
+// ============================================================
+function openEmailGroupsFromNewScreen() {
+  closeModal('modal-new-screen');
+  openModal('modal-email-groups');
+}
+
+function renderEmailGroupsList() {
+  const list = document.getElementById('email-groups-list');
+  if (state.emailGroups.length === 0) {
+    list.innerHTML = '<div style="color:var(--text2);font-size:13px;padding:8px 0;">Nenhum grupo criado.</div>';
+    return;
+  }
+  list.innerHTML = state.emailGroups.map((g, gi) => `
+    <div class="group-card">
+      <div class="group-name">${escHtml(g.name)}</div>
+      <div class="form-group" style="margin-bottom:8px;">
+        <label class="form-label">E-mails do grupo:</label>
+        <textarea class="email-list-textarea" id="eg-emails-${gi}" placeholder="Um e-mail por linha">${g.emails.join('\n')}</textarea>
+      </div>
+      <button class="tbl-action-btn danger" onclick="deleteEmailGroup(${gi})">Remover grupo</button>
+    </div>
+  `).join('');
+}
+
+function addEmailGroup() {
+  const name = prompt('Nome do grupo:');
+  if (!name) return;
+  state.emailGroups.push({ id: uid(), name, emails: [] });
+  renderEmailGroupsList();
+  updateEmailGroupSelects();
+}
+
+function deleteEmailGroup(i) {
+  state.emailGroups.splice(i, 1);
+  renderEmailGroupsList();
+  updateEmailGroupSelects();
+}
+
+function saveEmailGroups() {
+  state.emailGroups.forEach((g, gi) => {
+    const ta = document.getElementById(`eg-emails-${gi}`);
+    if (ta) g.emails = ta.value.split('\n').map(e => e.trim()).filter(Boolean);
+  });
+  closeModal('modal-email-groups');
+  renderHome();
+}
+
+function updateEmailGroupSelects() {
+  ['new-screen-email-group'].forEach(id => {
+    const sel = document.getElementById(id);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Selecione um grupo…</option>' + state.emailGroups.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+    sel.value = cur;
+  });
+}
+
+function toggleEmailOpts() {
+  document.getElementById('email-opts').style.display = document.getElementById('new-screen-email').checked ? '' : 'none';
+}
+
+// ============================================================
+// USERS
+// ============================================================
+function renderUsers() {
+  const tbody = document.getElementById('users-table-body');
+  tbody.innerHTML = state.users.map((u, i) => `
+    <tr>
+      <td>${escHtml(u.name)}</td>
+      <td>${escHtml(u.email)}</td>
+      <td><span class="role-badge ${u.role === 'master' ? 'role-master' : 'role-operator'}">${u.role === 'master' ? 'Master' : 'Operador'}</span></td>
+      <td>
+        ${u.id !== state.currentUser?.id ? `
+          <select onchange="changeUserRole('${u.id}', this.value)" class="form-select" style="width:auto;padding:4px 8px;font-size:12px;">
+            <option value="operator" ${u.role==='operator'?'selected':''}>Operador</option>
+            <option value="master" ${u.role==='master'?'selected':''}>Master</option>
+          </select>
+          <button class="tbl-action-btn danger" onclick="deleteUser('${u.id}')" style="margin-left:6px;">✕</button>
+        ` : '<span style="color:var(--text2);font-size:12px;">(você)</span>'}
+      </td>
+    </tr>
+  `).join('');
+}
+
+function changeUserRole(userId, role) {
+  const user = state.users.find(u => u.id === userId);
+  if (user) { user.role = role; renderUsers(); }
+}
+
+function deleteUser(userId) {
+  showConfirmDelete('Remover este usuário?', () => {
+    state.users = state.users.filter(u => u.id !== userId);
+    renderUsers();
+  });
+}
+
+// ============================================================
+// CONFIRM DELETE HELPER
+// ============================================================
+function showConfirmDelete(msg, cb) {
+  document.getElementById('confirm-delete-msg').textContent = msg;
+  state.confirmDeleteCb = cb;
+  document.getElementById('confirm-delete-btn').onclick = () => {
+    cb();
+    closeModal('modal-confirm-delete');
+  };
+  openModal('modal-confirm-delete');
+}
+
+// ============================================================
+// IMAGES
+// ============================================================
+function triggerImageUpload(inputId) {
+  document.getElementById(inputId).click();
+}
+
+function handleImageUpload(input, gridId) {
+  const grid = document.getElementById(gridId);
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      const img = document.createElement('img');
+      img.src = e.target.result;
+      img.className = 'image-thumb';
+      grid.insertBefore(img, grid.querySelector('.add-image-btn'));
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+// ============================================================
+// SCREEN OPTION TOGGLES
+// ============================================================
+function toggleScreenOptions() {}
+function toggleDestTable() {}
+
+// ============================================================
+// MODAL KEYBOARD CLOSE
+// ============================================================
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') {
+    document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+  }
+});
+
+// Close modal on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('open');
+  });
+});
+
+// Open email groups modal from new screen
+document.addEventListener('click', e => {
+  if (e.target.matches('[onclick="openModal(\'modal-email-groups\')"]')) {
+    renderEmailGroupsList();
+    updateEmailGroupSelects();
+  }
+});
+
+// Make sure email groups modal renders on open
+const origOpenModal = openModal;
+window.openModal = function(id) {
+  origOpenModal(id);
+  if (id === 'modal-email-groups') renderEmailGroupsList();
+  if (id === 'modal-new-action-btn') {
+    const screen = getActiveScreen();
+    if (screen) {
+      state.actionExtraFields = [];
+      renderActionExtraFields();
+      const sel = document.getElementById('action-btn-master-field');
+      sel.innerHTML = '<option value="">Selecione...</option>' + screen.fields.map(f => `<option value="${f.id}">${escHtml(f.name)}</option>`).join('');
+      const dSel = document.getElementById('action-btn-dest-table');
+      dSel.innerHTML = '<option value="__new__">Criar nova tabela automaticamente</option>' +
+        state.screens.filter(s => s.id !== screen.id).map(s => `<option value="${s.id}">${escHtml(s.name)}</option>`).join('');
+    }
+  }
+};
+
+// ============================================================
+// INIT
+// ============================================================
+// Seed demo data for testing
+(function seedDemo() {
+  const screenId = uid();
+  const fCodigo = { id: uid(), name: 'Código do item', type: 'text', master: true, required: true, unique: false, sum: false };
+  const fQtd = { id: uid(), name: 'Quantidade', type: 'number', master: false, required: true, unique: false, sum: true };
+  const fUnit = { id: uid(), name: 'Valor unitário', type: 'currency', master: false, required: false, unique: false, sum: false };
+  const fTotal = { id: uid(), name: 'Valor total', type: 'currency', master: false, required: false, unique: false, sum: true, isCalc: true };
+  const fAuditDate = { id: uid(), name: 'Data/hora', type: 'text', isAudit: true };
+  const fAuditUser = { id: uid(), name: 'Registrado por', type: 'text', isAudit: true };
+
+  const screen = {
+    id: screenId,
+    name: 'Estoque',
+    type: 'formulario',
+    fields: [fCodigo, fQtd, fUnit, fTotal, fAuditDate, fAuditUser],
+    records: [
+      { [fCodigo.id]: 'ITEM-001', [fQtd.id]: '50', [fUnit.id]: '12.50', [fTotal.id]: '625.00', [fAuditDate.id]: '28/04/2026 08:00', [fAuditUser.id]: 'Master' },
+      { [fCodigo.id]: 'ITEM-002', [fQtd.id]: '30', [fUnit.id]: '25.00', [fTotal.id]: '750.00', [fAuditDate.id]: '28/04/2026 08:30', [fAuditUser.id]: 'Master' },
+      { [fCodigo.id]: 'ITEM-001', [fQtd.id]: '20', [fUnit.id]: '13.00', [fTotal.id]: '260.00', [fAuditDate.id]: '28/04/2026 09:00', [fAuditUser.id]: 'Master' },
+      { [fCodigo.id]: 'ITEM-003', [fQtd.id]: '100', [fUnit.id]: '5.75', [fTotal.id]: '575.00', [fAuditDate.id]: '28/04/2026 10:00', [fAuditUser.id]: 'Master' },
+    ],
+    actionBtns: [],
+    allowImages: false,
+    sendEmail: false,
+    emailGroup: '',
+    condRules: [],
+    saldoConfig: {
+      qtyFieldId: fQtd.id,
+      unitFieldId: fUnit.id,
+      totalFieldId: fTotal.id,
+      historyEnabled: false,
+      historyName: '',
+    },
+  };
+
+  state.screens.push(screen);
+  state.activeScreenId = screenId;
+})();
+
+// Start
+document.getElementById('app').style.display = 'none';
+</script>
+</body>
+</html>
