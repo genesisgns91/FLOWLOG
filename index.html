@@ -1705,6 +1705,8 @@ function getAllColumns(screen){
   // Remove campos internos do sistema — nunca exibir
   ['_docId','_ts','_createdAt','_sva_at','_sva_by','_roteado_para','_tipo_mov']
     .forEach(k=>allKeys.delete(k));
+  // _sla_etapa_* ficam ocultos (só banco), _sla_total aparece na tabela
+  [...allKeys].filter(k=>/^_sla_etapa_/.test(k)).forEach(k=>allKeys.delete(k));
 
   const auditRx=/^_(data|hora|usuario)(_(\d+))?$/;
   const ordAudit=['data','hora','usuario'];
@@ -1756,6 +1758,9 @@ function getAllColumns(screen){
   // Auditorias das etapas seguintes (2, 3...) intercaladas após os extras
   steps.filter(s=>s!==1).forEach(s=>cols.push(...auditByStep[s]));
 
+  // _sla_total visível — aparece após todas as auditorias, se existir em algum registro
+  if([...allKeys].includes('_sla_total')&&!cols.includes('_sla_total'))cols.push('_sla_total');
+
   // _images sempre por último se existir
   if([...allKeys].includes('_images')&&!cols.includes('_images'))cols.push('_images');
 
@@ -1764,6 +1769,7 @@ function getAllColumns(screen){
 
 function colLabel(col){
   if(col==='_images')return'📷 Imagens';
+  if(col==='_sla_total')return'⏱ SLA Total';
   const m=col.match(/^_(data|hora|usuario)(_(\d+))?$/);if(!m)return col;
   const step=m[3]?parseInt(m[3]):1;
   const base=m[1]==='data'?'Data':m[1]==='hora'?'Hora':'Usuário';
@@ -3183,6 +3189,7 @@ async function submitActionForm(){
     extraData[f.name]=val;
   }
   const now=new Date();
+  const nowMs=now.getTime();
   const auditNow={_data:now.toLocaleDateString('pt-BR'),_hora:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),_usuario:S.currentUserData?.name||S.currentUser?.email||'—'};
   const changedTableIds=new Set([String(tableId)]);
   const actionMode=action.actionMode||'flow';
@@ -3191,6 +3198,46 @@ async function submitActionForm(){
   const firstRowIdx=recs.findIndex(r=>r[action.masterField]===masterVal);
   const sourceRow=firstRowIdx!==-1?{...recs[firstRowIdx]}:{[action.masterField]:masterVal};
   const dstAudit={_data_2:auditNow._data,_hora_2:auditNow._hora,_usuario_2:auditNow._usuario};
+
+  // ── Cálculo de SLA ──
+  // Descobre qual etapa de auditoria já existe no sourceRow para nomear corretamente
+  // _data sem sufixo = etapa 1, _data_2 = etapa 2, etc.
+  const existingAuditSteps=Object.keys(sourceRow)
+    .map(k=>{const m=k.match(/^_data(_(\d+))?$/);return m?(m[2]?parseInt(m[2]):1):null;})
+    .filter(s=>s!==null).sort((a,b)=>a-b);
+  const lastAuditStep=existingAuditSteps.length?existingAuditSteps[existingAuditSteps.length-1]:1;
+  const nextAuditStep=lastAuditStep+1; // esta ação gera a próxima etapa
+  // Atualiza dstAudit para usar o número de etapa correto
+  dstAudit[`_data_${nextAuditStep}`]=auditNow._data;
+  dstAudit[`_hora_${nextAuditStep}`]=auditNow._hora;
+  dstAudit[`_usuario_${nextAuditStep}`]=auditNow._usuario;
+  // Remove os _2 que foram atribuídos antes (eram placeholder)
+  delete dstAudit._data_2;delete dstAudit._hora_2;delete dstAudit._usuario_2;
+
+  // Tempo desde a criação do registro (etapa 1)
+  const createdAt=typeof sourceRow._createdAt==='number'?sourceRow._createdAt
+    :_svaLegacyDateToMs(sourceRow._data,sourceRow._hora)||nowMs;
+
+  // Tempo total: desde criação até agora
+  const totalDiffMs=nowMs-createdAt;
+  dstAudit._sla_total=_formatSla(totalDiffMs);
+
+  // Tempo da etapa anterior até agora (gravado oculto no banco)
+  // Se já existe _sla_total no sourceRow, calcula o delta desta etapa
+  if(lastAuditStep>1){
+    // Tenta obter o timestamp da última auditoria pelo campo _hora_N e _data_N
+    const prevDataKey=lastAuditStep===1?'_data':`_data_${lastAuditStep}`;
+    const prevHoraKey=lastAuditStep===1?'_hora':`_hora_${lastAuditStep}`;
+    const prevMs=_svaLegacyDateToMs(sourceRow[prevDataKey],sourceRow[prevHoraKey]);
+    if(prevMs){
+      const stepDiffMs=nowMs-prevMs;
+      dstAudit[`_sla_etapa_${lastAuditStep}`]=_formatSla(stepDiffMs);
+    }
+  }else{
+    // Etapa 1→2: delta é igual ao total
+    dstAudit[`_sla_etapa_1`]=dstAudit._sla_total;
+  }
+
   const fifoChanged=[]; // {rec, removed}
 
   if(actionMode==='flow'){
@@ -4282,6 +4329,20 @@ function _svaResolveValue(upd,formData,nowMs,nowIso,nowDateBr){
     // lead_time_* são calculados por-documento no batch acima — placeholder
     default:return'';
   }
+}
+
+/**
+ * Formata um intervalo em ms para o formato "Dd | HH:MM"
+ * Ex: 90061000ms → "1d | 01:01"  (1 dia, 1 hora e 1 minuto)
+ * Ex: 3600000ms  → "0d | 01:00"  (1 hora)
+ */
+function _formatSla(ms){
+  if(!ms||ms<0)return'—';
+  const totalMin=Math.floor(ms/60000);
+  const days=Math.floor(totalMin/1440);
+  const hours=Math.floor((totalMin%1440)/60);
+  const mins=totalMin%60;
+  return`${days}d | ${String(hours).padStart(2,'0')}:${String(mins).padStart(2,'0')}`;
 }
 
 /**
