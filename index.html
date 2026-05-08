@@ -84,7 +84,6 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px;margin-t
 
 /* ── LAYOUT ── */
 .content{padding:20px;max-width:1100px;margin:0 auto}
-#panel-tableview{max-width:100%;padding:0 16px 20px}
 .panel{display:none}.panel.active{display:block}
 .section-title{font-size:12px;font-weight:500;color:var(--text2);margin-bottom:12px;text-transform:uppercase;letter-spacing:.5px}
 .section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
@@ -190,7 +189,7 @@ label{font-size:12px;color:var(--text2);display:block;margin-bottom:4px;margin-t
 
 /* ── TABLE VIEW ── */
 .table-wrap{overflow:auto;border-radius:var(--r);border:.5px solid var(--border)}
-table{width:100%;border-collapse:collapse;font-size:13px;min-width:600px}
+table{width:100%;border-collapse:collapse;font-size:13px}
 th{padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text3);border-bottom:.5px solid var(--border);background:var(--bg3);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
 td{padding:8px 12px;border-bottom:.5px solid var(--border);color:var(--text)}
 tr:last-child td{border-bottom:none}
@@ -500,7 +499,6 @@ tr:hover td{background:var(--bg3)}
       <option value="selecionavel">Selecionável (vínculo com cadastro)</option>
       <option value="calculado">Calculado</option>
       <option value="mascara">Com máscara (CPF, CNPJ, Tel…)</option>
-      <option value="predefinido">Pré-definido (valor fixo)</option>
     </select>
     <div id="fieldLinkConfig" style="display:none">
       <label>Vincular com cadastro</label>
@@ -524,12 +522,6 @@ tr:hover td{background:var(--bg3)}
         <div style="font-size:11px;color:var(--text3);margin-top:4px">Quando o usuário selecionar o item mestre, este campo será preenchido com o valor desta coluna.</div>
       </div>
       <div id="fieldLinkHint" style="background:var(--accent-l);border-radius:8px;padding:8px;margin-top:8px;font-size:12px;color:var(--accent-t)">Preenchimento automático ao selecionar um registro.</div>
-    </div>
-    <div id="fieldPredefConfig" style="display:none;margin-top:8px">
-      <div style="background:var(--ok-l);border-radius:8px;padding:8px;font-size:12px;color:var(--ok);margin-bottom:8px"><i class="fa-solid fa-tag" style="margin-right:5px"></i>Campo somente leitura. O valor é definido pelo ADM e exibido igual para todos.</div>
-      <label>Valor pré-definido</label>
-      <input type="text" id="fieldPredefValue" placeholder="Ex: PENDENTE, Sim, 0, etc."/>
-      <div class="hint">Este valor aparecerá preenchido automaticamente e não poderá ser alterado pelo usuário.</div>
     </div>
     <div id="fieldMaskConfig" style="display:none;margin-top:8px">
       <label>Tipo de máscara</label>
@@ -592,17 +584,6 @@ tr:hover td{background:var(--bg3)}
       <input type="checkbox" id="fieldIsSum" style="width:auto" onchange="onMasterOrSumChange('sum')"/>
       <label for="fieldIsSum"><strong>Campo de soma</strong><span style="color:var(--ok);font-size:11px;display:block">Acumula valores com resumo automático.</span></label>
     </div>
-    <div class="divider" style="margin-top:14px"></div>
-    <div style="font-size:11px;font-weight:600;color:var(--text3);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">Destaque visual na tabela</div>
-    <div class="check-group">
-      <input type="checkbox" id="fieldHighlightOn" style="width:auto" onchange="g('fieldHighlightConfig').style.display=this.checked?'block':'none'"/>
-      <label for="fieldHighlightOn"><strong>Destacar coluna por valor</strong><span style="color:var(--text3);font-size:11px;display:block">Aplica cor e/ou negrito nas células conforme o valor.</span></label>
-    </div>
-    <div id="fieldHighlightConfig" style="display:none;margin-top:8px;background:var(--bg3);border-radius:var(--r);padding:10px">
-      <div style="font-size:11px;color:var(--text2);margin-bottom:8px"><i class="fa-solid fa-circle-info" style="margin-right:4px;color:var(--accent)"></i>Regras aplicadas de cima para baixo. A primeira que casar é usada.</div>
-      <div id="highlightRulesList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
-      <button class="btn btn-sm btn-primary" onclick="addHighlightRule()" style="width:100%"><i class="fa-solid fa-plus" style="margin-right:4px"></i>Nova regra de destaque</button>
-    </div>
     <div class="modal-actions">
       <button class="btn" onclick="closeModal('newFieldModal')">Cancelar</button>
       <button class="btn btn-primary" id="fieldSaveBtn" onclick="saveField()">Adicionar campo</button>
@@ -635,6 +616,17 @@ tr:hover td{background:var(--bg3)}
     <div class="section-title">Campos adicionais do formulário</div>
     <div id="actionFieldsList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px"></div>
     <button class="btn btn-sm" onclick="addActionField()" style="width:100%">+ Campo ao formulário</button>
+    <div class="divider"></div>
+    <div class="section-title">Confirmação antes de executar</div>
+    <div class="check-group">
+      <input type="checkbox" id="actionAskConfirm" style="width:auto" onchange="g('actionConfirmMsgRow').style.display=this.checked?'block':'none'"/>
+      <label for="actionAskConfirm">Exigir confirmação do usuário</label>
+    </div>
+    <div id="actionConfirmMsgRow" style="display:none;margin-top:6px">
+      <label>Mensagem de confirmação</label>
+      <input type="text" id="actionConfirmMsg" placeholder="Ex: Confirma a saída deste item do estoque?"/>
+      <div class="hint">Exibida em diálogo — se cancelado, nenhuma operação é realizada.</div>
+    </div>
     <div class="divider"></div>
     <div class="section-title">Notificação por e-mail</div>
     <div class="check-group">
@@ -1263,9 +1255,6 @@ function showPanel(id,btn){
   g('panel-'+id).classList.add('active');
   document.querySelectorAll('.nav-tab').forEach(t=>{t.classList.remove('active');if(!btn&&t.dataset.panel===id)t.classList.add('active');});
   if(btn)btn.classList.add('active');
-  // Restaura largura normal ao sair da tableview
-  const contentEl=document.querySelector('.content');
-  if(id!=='tableview'&&contentEl){contentEl.style.maxWidth='';contentEl.style.padding='';}
   if(id==='builder')renderBuilderList();
   if(id==='users'){
     const canManage=S.isMaster||(S.currentUserData?.role==='adm_basico');
@@ -1287,9 +1276,6 @@ async function openTableView(tableId){
   if(!S.records[tableId]||S.records[tableId].length===0){
     await FB.loadTableRecordsPaged(String(tableId));
   }
-  // Expandir o container para usar toda a largura da tela
-  const contentEl=document.querySelector('.content');
-  if(contentEl){contentEl.style.maxWidth='100%';contentEl.style.padding='0';}
   renderTableView();showPanel('tableview');document.querySelectorAll('.nav-tab').forEach(t=>t.classList.remove('active'));
 }
 // ═══ TABLE VIEW ═══
@@ -1358,9 +1344,7 @@ function renderTableView(){
       h+=buildRecordTable(tableId,screen,applyFilters(allRecs,_tableFilter[0],screen),canDel,false);
     }
     h+=`</div>`;
-    g('tableViewContent').innerHTML=h;
-    setTimeout(_applyAllHighlights,0);
-    return;
+    g('tableViewContent').innerHTML=h;return;
   }
 
   if(hasBalance&&masterField){
@@ -1411,7 +1395,6 @@ function renderTableView(){
   }
   h+=`</div>`;
   g('tableViewContent').innerHTML=h;
-  setTimeout(_applyAllHighlights,0);
 }
 
 function buildSummaryGroups(screen,recs){
@@ -1694,88 +1677,67 @@ function filterByDate(recs,dtIni,dtFim){
 }
 
 function getAllColumns(screen){
+  // Monta colunas em BLOCOS: [campos formulário] + [auditoria etapa 1] + [campos extras ação] + [auditoria etapa 2] … + [_lead_time]
+  // Cada etapa (formulário ou ação) mantém seus dados imediatamente seguidos da sua auditoria.
   const formCols=(screen.fields||[]).map(f=>f.name);
   const recs=S.records[screen.id]||[];
   if(!recs.length)return[...formCols,'_data','_hora','_usuario'];
 
-  // Coleta todas as chaves presentes nos registros
   const allKeys=new Set();
   recs.forEach(r=>Object.keys(r).forEach(k=>allKeys.add(k)));
+  allKeys.delete('_docId');
 
-  // Remove campos internos do sistema — nunca exibir
-  ['_docId','_ts','_createdAt','_sva_at','_sva_by','_roteado_para','_tipo_mov']
-    .forEach(k=>allKeys.delete(k));
-  // _sla_etapa_* ficam ocultos (só banco), _sla_total aparece na tabela
-  [...allKeys].filter(k=>/^_sla_etapa_/.test(k)).forEach(k=>allKeys.delete(k));
+  const auditRx=/^_(data|hora|usuario)(_\d+)?$/;
+  // Campos internos que nunca devem aparecer na tabela
+  const isInternal=k=>/^_(ts|createdAt|docId|images|roteado_para|tipo_mov|sva_at|sva_by|lead_time)$/.test(k)||k==='_lead_time';
 
-  const auditRx=/^_(data|hora|usuario)(_(\d+))?$/;
-  const ordAudit=['data','hora','usuario'];
+  // Campos extras: não são do formulário, não são auditoria, não são internos
+  const extraCols=[...allKeys].filter(k=>!formCols.includes(k)&&!auditRx.test(k)&&!isInternal(k));
 
-  // Separa campos de auditoria por etapa
-  // etapa 1 = _data, _hora, _usuario (sem sufixo)
-  // etapa 2 = _data_2, _hora_2, _usuario_2
-  // etapa N = _data_N, _hora_N, _usuario_N
+  // Agrupar auditorias por step
   const auditByStep={};
+  const ord=['data','hora','usuario'];
   [...allKeys].filter(k=>auditRx.test(k)).forEach(k=>{
-    const m=k.match(/^_(data|hora|usuario)(_(\d+))?$/);
-    // _data_1 legado (gravado antes da correção) é tratado como etapa 2
-    // _data sem sufixo = etapa 1 (formulário de entrada)
-    // _data_2 em diante = etapas dos botões de ação
-    const rawStep=m[3]?parseInt(m[3]):1;
-    const step=rawStep===1&&k.includes('_1')?2:rawStep;
-    if(!auditByStep[step])auditByStep[step]=[];
+    const m=k.match(/^_(data|hora|usuario)(_([0-9]+))?$/);
+    if(!m)return;
+    const step=m[3]?parseInt(m[3]):1;
+    auditByStep[step]=auditByStep[step]||[];
     auditByStep[step].push(k);
   });
-  // Ordena dentro de cada etapa: data → hora → usuario
-  Object.values(auditByStep).forEach(arr=>
-    arr.sort((a,b)=>ordAudit.findIndex(x=>a.includes(x))-ordAudit.findIndex(x=>b.includes(x)))
-  );
+  Object.values(auditByStep).forEach(a=>a.sort((a,b)=>ord.findIndex(x=>a.includes(x))-ord.findIndex(x=>b.includes(x))));
   const steps=Object.keys(auditByStep).map(Number).sort((a,b)=>a-b);
 
-  // Campos extras = não são campos do form E não são auditoria
-  // Mantém a ordem de inserção (primeiro registro que tiver o campo define a posição)
-  const extraCols=[];
-  recs.forEach(r=>{
-    Object.keys(r).forEach(k=>{
-      if(!formCols.includes(k)&&!auditRx.test(k)&&!extraCols.includes(k)
-         &&!['_docId','_ts','_createdAt','_sva_at','_sva_by','_roteado_para','_tipo_mov','_images'].includes(k)){
-        extraCols.push(k);
-      }
-    });
-  });
-
-  // Monta a ordem final:
-  // formCols → auditoria etapa 1 → extraCols (campos adicionais do botão de ação) → auditoria etapa 2+ (uma por etapa)
   const cols=[...formCols];
 
-  // Auditoria da etapa 1 logo após os campos do formulário
-  if(auditByStep[1])cols.push(...auditByStep[1]);
-  else if(!steps.length)cols.push('_data','_hora','_usuario');
+  if(!steps.length){
+    // Sem auditoria — fallback
+    extraCols.forEach(c=>{if(!cols.includes(c))cols.push(c);});
+    ['_data','_hora','_usuario'].forEach(k=>{if(!cols.includes(k))cols.push(k);});
+  }else if(steps.length===1){
+    // Apenas etapa 1: campos + auditoria1 + extras
+    cols.push(...(auditByStep[1]||[]));
+    extraCols.forEach(c=>{if(!cols.includes(c))cols.push(c);});
+  }else{
+    // Múltiplas etapas: campos + auditoria1 + extras + auditoria2 + … + auditoriaN
+    cols.push(...(auditByStep[steps[0]]||[]));
+    for(let i=1;i<steps.length;i++){
+      extraCols.forEach(c=>{if(!cols.includes(c))cols.push(c);});
+      cols.push(...(auditByStep[steps[i]]||[]));
+    }
+  }
 
-  // Campos extras (ex: Estoque, Endereço do botão de ação) — vêm depois da auditoria 1
-  extraCols.forEach(c=>{if(!cols.includes(c))cols.push(c);});
-
-  // Auditorias das etapas seguintes (2, 3...) intercaladas após os extras
-  steps.filter(s=>s!==1).forEach(s=>cols.push(...auditByStep[s]));
-
-  // _sla_total visível — aparece após todas as auditorias, se existir em algum registro
-  if([...allKeys].includes('_sla_total')&&!cols.includes('_sla_total'))cols.push('_sla_total');
-
-  // _images sempre por último se existir
-  if([...allKeys].includes('_images')&&!cols.includes('_images'))cols.push('_images');
+  // Lead time sempre por último
+  if(allKeys.has('_lead_time'))cols.push('_lead_time');
 
   return cols;
 }
 
 function colLabel(col){
   if(col==='_images')return'📷 Imagens';
-  if(col==='_sla_total')return'⏱ SLA Total';
+  if(col==='_lead_time')return'⏱ Lead Time';
   const m=col.match(/^_(data|hora|usuario)(_(\d+))?$/);if(!m)return col;
-  const step=m[3]?parseInt(m[3]):1;
-  const base=m[1]==='data'?'Data':m[1]==='hora'?'Hora':'Usuário';
-  if(step===1)return base;
-  // Etapa 2 em diante: label indica que é do botão de ação
-  return`${base} (saída ${step-1})`;
+  const step=m[3]?parseInt(m[3]):1,base=m[1]==='data'?'Data':m[1]==='hora'?'Hora':'Usuário';
+  return step===1?base:`${base} (etapa ${step})`;
 }
 
 // toggleHistoryVisible substituído por toggleTableSection
@@ -1844,8 +1806,6 @@ function openEditRecordModal(tableId,ri){
     // Converter moeda e percentual de volta para número para o input
     if(f.type==='moeda'&&val)val=String(parseRawNum(val));
     if(f.type==='percentual'&&val)val=val.replace('%','');
-    // Converter data br → ISO para input[type=date]
-    if((f.type==='data'||f.type==='datahora')&&val)val=dateToInputValue(val);
     el.value=val;
   });
   g('formImgSection').style.display=screen.allowImages?'block':'none';
@@ -2156,10 +2116,7 @@ function editCadastroRec(idx){
   // Preencher campos do formulário com os dados do registro
   screen.fields.forEach((f,i)=>{
     const el=g('field_'+i);if(!el)return;
-    let val=rec[f.name]||'';
-    // Campos de data: converter de dd/mm/aaaa para aaaa-mm-dd (formato do input[type=date])
-    if((f.type==='data'||f.type==='datahora')&&val)val=dateToInputValue(val);
-    el.value=val;
+    el.value=rec[f.name]||'';
   });
   g('formSubmitBtn').textContent='Atualizar';
   g('formSubmitBtn').style.background='var(--purple)';
@@ -2504,7 +2461,7 @@ function renderBuilderDetail(){
 
 function renderFieldList(screen){
   if(!screen.fields.length)return'<div class="empty-state" style="padding:16px">Nenhum campo.</div>';
-  return screen.fields.map((f,i)=>`<div class="field-item"><span class="field-name">${esc(f.name)}</span><span class="field-type-tag">${f.type==='predefinido'?'pré-definido':f.type}</span>${f.isMaster?`<span class="field-master-tag"><i class="fa-solid fa-star" style="font-size:9px"></i> mestre</span>`:''}${(!f.isMaster&&f.isUnique)?`<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--accent-l);color:var(--accent-t)">único</span>`:''}${f.isSum?`<span class="field-sum-tag"><i class="fa-solid fa-sigma" style="font-size:9px"></i> soma</span>`:''}${f.type==='predefinido'?`<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--ok-l);color:var(--ok)"><i class="fa-solid fa-tag" style="font-size:8px"></i> ${esc(f.predefValue||'')}</span>`:''}${f.highlightRules&&f.highlightRules.length?`<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--warn-l);color:var(--warn)"><i class="fa-solid fa-palette" style="font-size:8px"></i> ${f.highlightRules.length} regra${f.highlightRules.length!==1?'s':''}</span>`:''}${f.type==='selecionavel'&&f.linkTarget?`<span class="field-link"><i class="fa-solid fa-arrow-right" style="margin-right:2px"></i>${esc(S.screens.find(s=>s.id===f.linkTarget)?.name||'?')}</span>`:''}${f.required?'<span class="required-badge">obrigatório</span>':''}${S.isMaster?`<button class="btn btn-sm btn-ghost" onclick="openFieldModal(${screen.id},${i})"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-danger" onclick="removeField(${screen.id},${i})"><i class="fa-solid fa-xmark"></i></button>`:''}</div>`).join('');
+  return screen.fields.map((f,i)=>`<div class="field-item"><span class="field-name">${esc(f.name)}</span><span class="field-type-tag">${f.type}</span>${f.isMaster?`<span class="field-master-tag"><i class="fa-solid fa-star" style="font-size:9px"></i> mestre</span>`:''}${(!f.isMaster&&f.isUnique)?`<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--accent-l);color:var(--accent-t)">único</span>`:''}${f.isSum?`<span class="field-sum-tag"><i class="fa-solid fa-sigma" style="font-size:9px"></i> soma</span>`:''}${f.type==='selecionavel'&&f.linkTarget?`<span class="field-link"><i class="fa-solid fa-arrow-right" style="margin-right:2px"></i>${esc(S.screens.find(s=>s.id===f.linkTarget)?.name||'?')}</span>`:''}${f.required?'<span class="required-badge">obrigatório</span>':''}${S.isMaster?`<button class="btn btn-sm btn-ghost" onclick="openFieldModal(${screen.id},${i})"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-danger" onclick="removeField(${screen.id},${i})"><i class="fa-solid fa-xmark"></i></button>`:''}</div>`).join('');
 }
 async function setFlowTarget(screenId,val){const s=S.screens.find(x=>x.id===screenId);if(s)s.flowTarget=val?parseInt(val):null;await FB.saveConfig();}
 function renderBuilderDetailMulti(screen){
@@ -2582,7 +2539,6 @@ async function submitMultiForm(){
     let val=el.value;
     if(f.type==='moeda'&&val)val=fmtMoeda(parseFloat(val));
     if(f.type==='percentual'&&val)val=parseFloat(val).toFixed(2)+'%';
-    if((f.type==='data'||f.type==='datahora')&&val)val=formatDateFieldValue(val);
     if(f.required&&!val){showToast(`"${f.name}" é obrigatório`,'danger');return;}
     header[f.name]=val;
   }
@@ -2598,7 +2554,6 @@ async function submitMultiForm(){
       let val=el.value;
       if(f.type==='moeda'&&val)val=fmtMoeda(parseFloat(val));
       if(f.type==='percentual'&&val)val=parseFloat(val).toFixed(2)+'%';
-      if((f.type==='data'||f.type==='datahora')&&val)val=formatDateFieldValue(val);
       if(f.required&&!val){showToast(`"${f.name}" obrigatório na linha`,'danger');return;}
       rowData[f.name]=val;
     }
@@ -2878,12 +2833,10 @@ function onFieldTypeChange(){
   g('fieldLinkConfig').style.display=val==='selecionavel'?'block':'none';
   g('fieldCalcConfig').style.display=val==='calculado'?'block':'none';
   g('fieldMaskConfig').style.display=val==='mascara'?'block':'none';
-  g('fieldPredefConfig').style.display=val==='predefinido'?'block':'none';
   const num=['numero','moeda','percentual'].includes(val);
   g('sumFieldRow').style.display=num?'flex':'none';if(!num)g('fieldIsSum').checked=false;
   const isCalc=val==='calculado';
-  const isPredef=val==='predefinido';
-  ['fieldIsMaster','fieldIsUnique','fieldRequired'].forEach(id=>{g(id).disabled=isCalc||isPredef;if(isCalc||isPredef)g(id).checked=false;});
+  ['fieldIsMaster','fieldIsUnique','fieldRequired'].forEach(id=>{g(id).disabled=isCalc;if(isCalc)g(id).checked=false;});
   if(isCalc){
     const screen=S.screens.find(s=>s.id===S.activeForm?.screenId);
     // Incluir: número, moeda, percentual, data, hora, data_hora e campos auto (selecionável)
@@ -2948,11 +2901,6 @@ function openFieldModal(screenId,fieldIdx){
   g('newFieldName').value=field?field.name:'';g('newFieldType').value=field?field.type:'texto';
   g('fieldRequired').checked=field?!!field.required:false;g('fieldIsMaster').checked=field?!!field.isMaster:false;
   g('fieldIsUnique').checked=field?!!field.isUnique:false;g('fieldIsSum').checked=field?!!field.isSum:false;
-  // Resetar highlight para campo novo
-  if(!isEdit){
-    S.tempHighlightRules=[];
-    const hlOn=g('fieldHighlightOn');if(hlOn){hlOn.checked=false;g('fieldHighlightConfig').style.display='none';}
-  }
   if(field?.type==='calculado'){
     S.calcTokens=field.calcTokens?[...field.calcTokens]:field.calcA?[{type:'field',val:field.calcA},{type:'op',val:{'+':'+','-':'−','*':'×','/':'÷'}[field.calcOp]||field.calcOp||'+'},{type:'field',val:field.calcB}]:[];
     // Restaurar tipo de resultado
@@ -2963,21 +2911,6 @@ function openFieldModal(screenId,fieldIdx){
       if(screen2)populateCalcResultType(screen2);
     },50);
   }else S.calcTokens=[];
-  // Restaurar valor pré-definido
-  if(field?.type==='predefinido'){
-    setTimeout(()=>{const el=g('fieldPredefValue');if(el)el.value=field.predefValue||'';},30);
-  }
-  // Restaurar configuração de highlight
-  const hlOn=g('fieldHighlightOn');
-  if(hlOn){
-    const hasHL=field&&field.highlightRules&&field.highlightRules.length>0;
-    hlOn.checked=hasHL;
-    g('fieldHighlightConfig').style.display=hasHL?'block':'none';
-    S.tempHighlightRules=field&&field.highlightRules?JSON.parse(JSON.stringify(field.highlightRules)):[];
-    setTimeout(()=>renderHighlightRules(),30);
-  }else{
-    S.tempHighlightRules=[];
-  }
   onFieldTypeChange();
   g('fieldLinkTarget').innerHTML=S.screens.filter(s=>s.type==='cadastro').map(s=>`<option value="${s.id}" ${field&&field.linkTarget===s.id?'selected':''}>${esc(s.name)}</option>`).join('');
   if(field?.type==='selecionavel'){
@@ -3017,18 +2950,7 @@ async function saveField(){
       field.calcA=field.calcTokens[0].val;field.calcOp=opMap[field.calcTokens[1].val]||field.calcTokens[1].val;field.calcB=field.calcTokens[2].val;
     }
   }
-  if(type==='predefinido'){
-    field.predefValue=(g('fieldPredefValue')?.value||'').trim();
-    field.required=false;field.isMaster=false;field.isUnique=false;
-  }
   if(type==='mascara'){field.maskType=v('fieldMaskType');if(field.maskType==='custom')field.customMask=v('fieldCustomMask');}
-  // Salvar regras de highlight
-  const hlOn=g('fieldHighlightOn');
-  if(hlOn&&hlOn.checked&&S.tempHighlightRules&&S.tempHighlightRules.length){
-    field.highlightRules=JSON.parse(JSON.stringify(S.tempHighlightRules));
-  }else{
-    field.highlightRules=[];
-  }
   const isEdit=S.editingFieldIdx!=null;
   if(isMulti){
     if(!screen.multiFields)screen.multiFields=[];
@@ -3058,6 +2980,11 @@ function _openActionModal(tableId,actionIdx){
   renderTempActionFields();
   document.querySelectorAll('input[name="actionMode"]').forEach(r=>{r.checked=r.value===(isEdit?act.actionMode||'flow':'flow');});
   if(!isEdit)g('actionModeFlow').checked=true;
+  // Confirmação antes de executar
+  const askConfirm=isEdit?!!(act.confirmMessage):false;
+  g('actionAskConfirm').checked=askConfirm;
+  g('actionConfirmMsgRow').style.display=askConfirm?'block':'none';
+  if(g('actionConfirmMsg'))g('actionConfirmMsg').value=isEdit?(act.confirmMessage||''):'';
   // E-mail
   const sendEmail=isEdit?!!act.sendEmail:false;
   g('actionSendEmail').checked=sendEmail;
@@ -3083,6 +3010,7 @@ function confirmActionField(){
 async function saveAction(){
   const name=v('actionBtnName'),masterField=v('actionMasterField'),targetVal=v('actionTargetTable');
   const actionMode=document.querySelector('input[name="actionMode"]:checked')?.value||'flow';
+  const askConfirm=g('actionAskConfirm')?.checked,confirmMessage=askConfirm?(g('actionConfirmMsg')?.value||'').trim():'';
   const sendEmail=g('actionSendEmail').checked,emailGroupId=sendEmail?v('actionEmailGroup'):'';
   if(!name){showToast('Digite o nome','danger');return;}
   if(!masterField){showToast('Selecione o campo mestre','danger');return;}
@@ -3097,7 +3025,7 @@ async function saveAction(){
       const nt={id:uid(),name:src.name+' → '+name,type:'tabela-form',fields:[...src.fields,...S.tempActionFields],actions:[],linkedFormId:null,linkedTableId:null,sourceTableId:tableId,actionName:name};
       S.screens.push(nt);S.records[nt.id]=[];targetTableId=nt.id;
     }
-    src.actions[S.editingActionIdx]={name,masterField,extraFields:[...S.tempActionFields],targetTableId,actionMode,sendEmail,emailGroupId};
+    src.actions[S.editingActionIdx]={name,masterField,extraFields:[...S.tempActionFields],targetTableId,actionMode,confirmMessage,sendEmail,emailGroupId};
   }else{
     if(targetVal==='__new__'){
       const nt={id:uid(),name:src.name+' → '+name,type:'tabela-form',fields:[...src.fields,...S.tempActionFields],actions:[],linkedFormId:null,linkedTableId:null,sourceTableId:tableId,actionName:name};
@@ -3107,7 +3035,7 @@ async function saveAction(){
       const dest=S.screens.find(s=>s.id===targetTableId);
       if(dest){const en=dest.fields.map(f=>f.name);[...src.fields,...S.tempActionFields].forEach(f=>{if(!en.includes(f.name))dest.fields.push({...f});});}
     }
-    src.actions.push({name,masterField,extraFields:[...S.tempActionFields],targetTableId,actionMode,sendEmail,emailGroupId});
+    src.actions.push({name,masterField,extraFields:[...S.tempActionFields],targetTableId,actionMode,confirmMessage,sendEmail,emailGroupId});
   }
   S.tempActionFields=[];
   await FB.saveConfig();closeModal('newActionModal');renderBuilderDetail();renderHome();
@@ -3174,6 +3102,8 @@ function onActionMasterChange(tableId,actionIdx,masterVal){
 }
 
 async function submitActionForm(){
+  // ── IMPORTANTE: confirmação configurada deve ser verificada ANTES de qualquer persistência.
+  // Se o usuário cancelar, NADA é gravado (nem registro, nem auditoria, nem fifo).
   const saveBtn=g('actionFormModal').querySelector('.btn-primary[onclick="submitActionForm()"]');
   if(saveBtn){if(saveBtn.disabled)return;saveBtn.disabled=true;saveBtn.innerHTML='<i class="fa-solid fa-spinner fa-spin" style="margin-right:5px"></i>Executando…';}
   const _restoreBtn=()=>{if(saveBtn){saveBtn.disabled=false;saveBtn.innerHTML='Confirmar';}};
@@ -3181,13 +3111,23 @@ async function submitActionForm(){
   const{tableId,actionIdx}=S.activeAction;
   const screen=S.screens.find(s=>s.id===tableId),action=screen.actions[actionIdx];
   const recs=S.records[tableId]||[],masterVal=g('actionMasterValue').value;
-  if(!masterVal){showToast('Selecione um valor','danger');return;}
+  if(!masterVal){showToast('Selecione um valor','danger');_restoreBtn();return;}
+
+  // Coletar campos extras do formulário de ação
   const extraFields=action.extraFields||[],extraData={};
   for(let i=0;i<extraFields.length;i++){
     const f=extraFields[i],el=g('actionField_'+i),val=el?el.value:'';
-    if(f.required&&!val){showToast(`"${f.name}" é obrigatório`,'danger');return;}
+    if(f.required&&!val){showToast(`"${f.name}" é obrigatório`,'danger');_restoreBtn();return;}
     extraData[f.name]=val;
   }
+
+  // ── Confirmação ANTES de qualquer persistência ──
+  // Se existir mensagem de confirmação na ação, exibe diálogo e aborta toda a operação se cancelar.
+  if(action.confirmMessage&&action.confirmMessage.trim()){
+    const confirmed=await appConfirm(action.confirmMessage.trim(),action.name||'Confirmar ação');
+    if(!confirmed){_restoreBtn();return;} // Cancela TUDO — nada é gravado
+  }
+
   const now=new Date();
   const nowMs=now.getTime();
   const auditNow={_data:now.toLocaleDateString('pt-BR'),_hora:now.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),_usuario:S.currentUserData?.name||S.currentUser?.email||'—'};
@@ -3197,46 +3137,32 @@ async function submitActionForm(){
   const groups=S._actionGroups||buildSummaryGroups(screen,recs),grpRow=groups[masterVal]||{};
   const firstRowIdx=recs.findIndex(r=>r[action.masterField]===masterVal);
   const sourceRow=firstRowIdx!==-1?{...recs[firstRowIdx]}:{[action.masterField]:masterVal};
-  const dstAudit={_data_2:auditNow._data,_hora_2:auditNow._hora,_usuario_2:auditNow._usuario};
 
-  // ── Cálculo de SLA ──
-  // Descobre qual etapa de auditoria já existe no sourceRow para nomear corretamente
-  // _data sem sufixo = etapa 1, _data_2 = etapa 2, etc.
-  const existingAuditSteps=Object.keys(sourceRow)
-    .map(k=>{const m=k.match(/^_data(_(\d+))?$/);return m?(m[2]?parseInt(m[2]):1):null;})
-    .filter(s=>s!==null).sort((a,b)=>a-b);
-  const lastAuditStep=existingAuditSteps.length?existingAuditSteps[existingAuditSteps.length-1]:1;
-  const nextAuditStep=lastAuditStep+1; // esta ação gera a próxima etapa
-  // Atualiza dstAudit para usar o número de etapa correto
-  dstAudit[`_data_${nextAuditStep}`]=auditNow._data;
-  dstAudit[`_hora_${nextAuditStep}`]=auditNow._hora;
-  dstAudit[`_usuario_${nextAuditStep}`]=auditNow._usuario;
-  // Remove os _2 que foram atribuídos antes (eram placeholder)
-  delete dstAudit._data_2;delete dstAudit._hora_2;delete dstAudit._usuario_2;
-
-  // Tempo desde a criação do registro (etapa 1)
-  const createdAt=typeof sourceRow._createdAt==='number'?sourceRow._createdAt
-    :_svaLegacyDateToMs(sourceRow._data,sourceRow._hora)||nowMs;
-
-  // Tempo total: desde criação até agora
-  const totalDiffMs=nowMs-createdAt;
-  dstAudit._sla_total=_formatSla(totalDiffMs);
-
-  // Tempo da etapa anterior até agora (gravado oculto no banco)
-  // Se já existe _sla_total no sourceRow, calcula o delta desta etapa
-  if(lastAuditStep>1){
-    // Tenta obter o timestamp da última auditoria pelo campo _hora_N e _data_N
-    const prevDataKey=lastAuditStep===1?'_data':`_data_${lastAuditStep}`;
-    const prevHoraKey=lastAuditStep===1?'_hora':`_hora_${lastAuditStep}`;
-    const prevMs=_svaLegacyDateToMs(sourceRow[prevDataKey],sourceRow[prevHoraKey]);
-    if(prevMs){
-      const stepDiffMs=nowMs-prevMs;
-      dstAudit[`_sla_etapa_${lastAuditStep}`]=_formatSla(stepDiffMs);
-    }
-  }else{
-    // Etapa 1→2: delta é igual ao total
-    dstAudit[`_sla_etapa_1`]=dstAudit._sla_total;
-  }
+  // Determinar número da próxima etapa de auditoria no registro de destino.
+  // Se a tabela de destino já tem registros com _data/_hora/_usuario_N,
+  // a nova etapa será N+1. Caso contrário, etapa 1.
+  // Para o registro de destino recém-criado (newDestRec), a etapa da ação é 2
+  // (etapa 1 = auditoria original do formulário de origem).
+  // Convenção: _data/_hora/_usuario (sem sufixo) = etapa 1 (do formulário)
+  //            _data_2/_hora_2/_usuario_2 = etapa 2 (1ª ação executada)
+  //            _data_3/_hora_3/_usuario_3 = etapa 3 (2ª ação executada) etc.
+  // Para descobrir qual etapa usar, verificamos o sourceRow.
+  const _getNextAuditStep=(row)=>{
+    let maxStep=1;
+    Object.keys(row).forEach(k=>{
+      const m=k.match(/^_(data|hora|usuario)(_([0-9]+))?$/);
+      if(m){const s=m[3]?parseInt(m[3]):1;if(s>maxStep)maxStep=s;}
+    });
+    return maxStep+1;
+  };
+  const nextStep=_getNextAuditStep(sourceRow);
+  const stepSuffix=nextStep===1?'':('_'+nextStep);
+  const dstAudit={
+    ['_data'+stepSuffix]:auditNow._data,
+    ['_hora'+stepSuffix]:auditNow._hora,
+    ['_usuario'+stepSuffix]:auditNow._usuario,
+    _audit_ts:nowMs  // timestamp numérico da etapa — usado no lead time
+  };
 
   const fifoChanged=[]; // {rec, removed}
 
@@ -3245,9 +3171,9 @@ async function submitActionForm(){
       const mf=screen.balanceMasterField,avg=screen.balanceAvgField,tot=screen.balanceTotalField;
       const el=g('actionSumField_'+mf.replace(/[^a-zA-Z0-9]/g,'_'));
       const qtd=el?parseFloat(el.value)||0:0;
-      if(qtd<=0){showToast('Informe quantidade positiva','danger');return;}
+      if(qtd<=0){showToast('Informe quantidade positiva','danger');_restoreBtn();return;}
       const saldoConsolidado=typeof grpRow[mf]==='number'?grpRow[mf]:parseRawNum(grpRow[mf]||'0');
-      if(qtd>saldoConsolidado){showToast(`Saldo insuficiente. Disponível: ${saldoConsolidado}`,'danger');return;}
+      if(qtd>saldoConsolidado){showToast(`Saldo insuficiente. Disponível: ${saldoConsolidado}`,'danger');_restoreBtn();return;}
       let restante=qtd;
       for(let i=0;i<recs.length&&restante>0;i++){
         if(recs[i][action.masterField]!==masterVal)continue;
@@ -3262,7 +3188,6 @@ async function submitActionForm(){
       }
       if(avg&&tot)S.records[tableId].filter(r=>r[action.masterField]===masterVal).forEach(r=>{
         r[tot]=(parseRawNum(r[mf])*parseRawNum(r[avg])).toFixed(2);
-        // Atualizar entry no fifoChanged se já existir, senão adicionar
         const existing=fifoChanged.find(c=>c.rec._docId===r._docId&&!c.removed);
         if(existing)existing.rec[tot]=r[tot];else fifoChanged.push({rec:{...r},removed:false});
       });
@@ -3280,9 +3205,9 @@ async function submitActionForm(){
       for(const sf of pSF){
         const el=g('actionSumField_'+sf.name.replace(/[^a-zA-Z0-9]/g,'_'));if(!el)continue;
         const qtd=parseFloat(el.value)||0;
-        if(qtd<=0){showToast(`Informe quantidade positiva para "${sf.name}"`,'danger');return;}
+        if(qtd<=0){showToast(`Informe quantidade positiva para "${sf.name}"`,'danger');_restoreBtn();return;}
         const saldoConsolidado=typeof grpRow[sf.name]==='number'?grpRow[sf.name]:parseRawNum(grpRow[sf.name]||'0');
-        if(qtd>saldoConsolidado){showToast(`Saldo insuficiente para "${sf.name}". Disponível: ${saldoConsolidado}`,'danger');return;}
+        if(qtd>saldoConsolidado){showToast(`Saldo insuficiente para "${sf.name}". Disponível: ${saldoConsolidado}`,'danger');_restoreBtn();return;}
         let restante=qtd;
         for(let i=0;i<recs.length&&restante>0;i++){
           if(recs[i][action.masterField]!==masterVal)continue;
@@ -3308,10 +3233,36 @@ async function submitActionForm(){
       S.records[tableId]=S.records[tableId].filter(r=>r[action.masterField]!==masterVal);
     }
   }
-  S.records[action.targetTableId]=S.records[action.targetTableId]||[];
-  const destScreen=S.screens.find(s=>s.id===action.targetTableId);
+
+  // ── Calcular lead time antes de persistir ──
+  // Lead time = timestamp da última auditoria − timestamp da primeira auditoria (_createdAt ou _audit_ts_1)
+  // Formato final: "Xd HH:MM" — exibido na coluna _lead_time
+  const _calcLeadTime=(srcRow,nowMs2)=>{
+    // Prioridade: _createdAt (timestamp ms gravado no addRecord)
+    const firstTs=typeof srcRow._createdAt==='number'?srcRow._createdAt
+      :(srcRow._audit_ts_1||null)  // fallback: timestamp da etapa 1 gravado pela ação anterior
+      ||_svaLegacyDateToMs(srcRow._data,srcRow._hora);  // fallback legado
+    if(!firstTs)return null;
+    const diffMs=nowMs2-firstTs;
+    if(diffMs<0)return null;
+    const totalMin=Math.floor(diffMs/60000);
+    const days=Math.floor(totalMin/1440);
+    const remMin=totalMin%1440;
+    const h=Math.floor(remMin/60),m=remMin%60;
+    return days>0
+      ?`${days}d ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
+      :`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
+  };
+  const leadTime=_calcLeadTime(sourceRow,nowMs);
+
+  // Montar registro de destino: sourceRow + extraData (campos da ação) + dstAudit (auditoria desta etapa) + lead_time
   const newDestRec={...sourceRow,...extraData,...dstAudit};
+  if(leadTime)newDestRec._lead_time=leadTime;
+
+  // Gravação (todas as operações abaixo só ocorrem após confirmação)
+  const destScreen=S.screens.find(s=>s.id===action.targetTableId);
   if(!destScreen?.isHistoryOnly){
+    S.records[action.targetTableId]=S.records[action.targetTableId]||[];
     S.records[action.targetTableId].push(newDestRec);
     await FB.addRecord(String(action.targetTableId),newDestRec);
   }
@@ -3350,7 +3301,7 @@ function openFormModal(screenId){
   g('formFields').innerHTML=!screen.fields.length?'<div class="empty-state">Nenhum campo configurado.</div>':
     screen.fields.map((f,i)=>{
       const wrap=hasRules?`<div class="cond-field-wrap" data-fname="${esc(f.name)}" id="field_cw_${sanitizeId(f.name)}" style="${defaultHidden.has(f.name)?'display:none':''}">`:'';
-      return`${wrap}<label>${esc(f.name)}${f.isMaster?`<span class="field-master-tag" style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--purple-l);color:var(--purple);margin-left:4px"><i class="fa-solid fa-star" style="font-size:8px"></i></span>`:''}${f.isUnique?`<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--accent-l);color:var(--accent-t);margin-left:4px">único</span>`:''}${f.required?'<span class="required-badge" style="margin-left:4px">*</span>':''}${f.type==='calculado'?`<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--purple-l);color:var(--purple);margin-left:4px"><i class="fa-solid fa-calculator" style="font-size:8px"></i></span>`:''}${f.type==='predefinido'?`<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--ok-l);color:var(--ok);margin-left:4px"><i class="fa-solid fa-lock" style="font-size:8px"></i> fixo</span>`:''}</label>${buildFieldInput(f,'field_'+i,'',screenId)}${hasRules?'</div>':''}`;
+      return`${wrap}<label>${esc(f.name)}${f.isMaster?`<span class="field-master-tag" style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--purple-l);color:var(--purple);margin-left:4px"><i class="fa-solid fa-star" style="font-size:8px"></i></span>`:''}${f.isUnique?`<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--accent-l);color:var(--accent-t);margin-left:4px">único</span>`:''}${f.required?'<span class="required-badge" style="margin-left:4px">*</span>':''}${f.type==='calculado'?`<span style="font-size:10px;padding:2px 6px;border-radius:4px;background:var(--purple-l);color:var(--purple);margin-left:4px"><i class="fa-solid fa-calculator" style="font-size:8px"></i></span>`:''}</label>${buildFieldInput(f,'field_'+i,'',screenId)}${hasRules?'</div>':''}`;
     }).join('');
   g('formImgSection').style.display=screen.allowImages?'block':'none';
   g('formImgPreviews').innerHTML='';
@@ -3392,7 +3343,6 @@ function buildFieldInput(f,id,extraStyle='',screenId=null){
   if(f.type==='percentual')return`<input type="number" id="${id}" step="0.01" min="0" max="100" placeholder="0,00" ${s}/>`;
   if(f.type==='booleano')return`<select id="${id}" ${s}><option value="">Selecionar...</option><option>Sim</option><option>Não</option></select>`;
   if(f.type==='calculado')return`<input type="text" id="${id}" placeholder="(calculado)" readonly data-calc="1" ${s} style="margin-bottom:6px;background:var(--bg3);color:var(--text3);cursor:not-allowed"/>`;
-  if(f.type==='predefinido')return`<input type="text" id="${id}" value="${esc(f.predefValue||'')}" readonly ${s} style="margin-bottom:6px;background:var(--bg3);color:var(--text3);cursor:not-allowed" title="Valor pré-definido pelo ADM"/>`;
   if(f.type==='mascara'){
     const masks={cpf:'000.000.000-00',cnpj:'00.000.000/0000-00',tel:'(00) 0000-0000',cel:'(00) 00000-0000',cep:'00000-000',data_br:'00/00/0000',placa:'AAA-0000'};
     const ph=masks[f.maskType]||f.customMask||'';
@@ -3545,13 +3495,9 @@ async function submitForm(){
     const el=g('field_'+i);if(!el)continue;
     const wrap=el.closest('.cond-field-wrap');if(wrap&&wrap.style.display==='none')continue;
     let val=el.tagName==='SELECT'?el.value:el.value;
-    // Campo pré-definido: usa o valor fixo configurado (ignora o que está no input)
-    if(f.type==='predefinido'){val=f.predefValue||'';record[f.name]=val;continue;}
     if(f.type==='email'&&val&&!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val)){showToast(`"${f.name}" não é um e-mail válido`,'danger');return;}
     if(f.type==='moeda'&&val)val=fmtMoeda(parseFloat(val));
     if(f.type==='percentual'&&val)val=parseFloat(val).toFixed(2)+'%';
-    // Converter data do formato ISO (aaaa-mm-dd) para br (dd/mm/aaaa)
-    if((f.type==='data'||f.type==='datahora')&&val)val=formatDateFieldValue(val);
     if(f.required&&!val){showToast(`"${f.name}" é obrigatório`,'danger');return;}
     record[f.name]=val;
   }
@@ -3655,10 +3601,31 @@ async function submitForm(){
   if(screen.sendEmail&&screen.emailGroupId)sendFormEmail(screen,[record]);
   // ── Executar Ações ao Salvar (motor genérico pós-submit) ──
   if((screen.saveActions||[]).length){
-    executeSaveActions(screen,record).then(()=>{
-      // Atualiza a view se estiver aberta
+    try{
+      await executeSaveActions(screen,record);
       if(S.currentTableView)renderTableView();
-    }).catch(e=>console.error('executeSaveActions',e));
+    }catch(eBlock){
+      if(eBlock._isSvaBlock){
+        // Bloqueio ativado por regra SVA — desfazer a gravação do registro principal
+        // Remove da memória local
+        const tid=screen.balanceMasterField
+          ?(String(screen.id))
+          :(String(screen.flowTarget||screen.linkedTableId||screen.id));
+        const rArr=S.records[tid]||[];
+        const lastIdx=rArr.length-1;
+        if(lastIdx>=0&&rArr[lastIdx]._data===record._data&&rArr[lastIdx]._usuario===record._usuario){
+          const removed=rArr.splice(lastIdx,1)[0];
+          // Desfaz no Firestore
+          if(removed._docId){
+            try{await FB.deleteRecord(tid,removed);}catch{}
+          }
+        }
+        showToast('Envio bloqueado: '+eBlock.message,'danger');
+        _restoreBtn();return;
+      }
+      console.error('executeSaveActions',eBlock);
+      showToast('Erro nas ações ao salvar.','danger');
+    }
   }
   _formImgs=[];closeModal('formModal');renderHome();updateStats();showToast('Registro salvo!','success');
   if(screen.type==='cadastro'){setTimeout(()=>renderCadastroList(),100);}
@@ -3970,8 +3937,9 @@ const SVA_VALUE_TYPES=[
   {v:'lead_time_ms',l:'Lead time — ms (agora − _createdAt)'},
   {v:'lead_time_min',l:'Lead time — minutos'},
   {v:'lead_time_hrs',l:'Lead time — horas (decimal)'},
-  {v:'lead_time_fmt',l:'Lead time — HH:MM formatado'},
+  {v:'lead_time_fmt',l:'Lead time — DD | HH:MM formatado'},
   {v:'lead_time_days',l:'Lead time — dias'},
+  {v:'block',l:'🚫 Bloquear envio (se encontrar registros)'},
 ];
 
 // Operadores de condição adicionais (para filtrar registros alvo)
@@ -4186,6 +4154,11 @@ async function saveSaveActions(){
  * @param {Object} formData — dados do registro que acabou de ser salvo
  */
 async function executeSaveActions(screen,formData){
+  // Motor de Ações ao Salvar.
+  // REGRA DE BLOQUEIO: se qualquer regra tiver action='block', interrompe TODA a transação,
+  // desfaz o registro principal (avisa o chamador via exceção) e exibe mensagem.
+  // REGRA DE CONFIRMAÇÃO: verificada ANTES de qualquer persistência.
+  // Se o usuário cancelar a confirmação, a regra é pulada (não cancela as outras).
   const actions=(screen.saveActions||[]);
   if(!actions.length)return;
 
@@ -4198,127 +4171,132 @@ async function executeSaveActions(screen,formData){
   for(const rule of actions){
     try{
       // ── Validação mínima ──
-      if(!rule.targetCollection||!rule.sourceField||!rule.matchField)continue;
-      const matchValue=formData[rule.sourceField];
-      if(matchValue==null||matchValue==='')continue;
+      if(!rule.targetCollection)continue;
 
-      // ── Montar query Firestore (consulta direta — sem cache) ──
+      // ── Verificar se a regra é do tipo BLOCK (sem match necessário) ──
+      const isBlockRule=(rule.updates||[]).some(u=>u.valueType==='block')||rule.blockOnMatch;
+
+      // ── Montar query Firestore ──
       const colRef=fns.collection(db,`records/${rule.targetCollection}/items`);
-      let q=fns.query(colRef,fns.where(rule.matchField,'==',String(matchValue)));
+      let docs=[];
 
-      // Aplicar condições adicionais que o Firestore suporta nativamente
-      const extraConds=(rule.conditions||[]).filter(c=>c.field&&['==','!=','>','<','>=','<='].includes(c.op)&&c.value!=='');
-      for(const cond of extraConds){
-        const opMap={'==':'==','!=':'!=','>':'>','<':'<','>=':'>=','<=':'<='};
-        try{q=fns.query(q,fns.where(cond.field,opMap[cond.op],cond.value));}
-        catch(e){console.warn('sva: condição ignorada (índice composto necessário)',cond,e);}
-      }
+      if(rule.sourceField&&rule.matchField){
+        const matchValue=formData[rule.sourceField];
+        if(matchValue==null||matchValue===''){
+          if(isBlockRule)continue; // sem match = sem bloqueio
+          continue;
+        }
+        let q=fns.query(colRef,fns.where(rule.matchField,'==',String(matchValue)));
+        const extraConds=(rule.conditions||[]).filter(c=>c.field&&['==','!=','>','<','>=','<='].includes(c.op)&&c.value!=='');
+        for(const cond of extraConds){
+          try{q=fns.query(q,fns.where(cond.field,cond.op,cond.value));}
+          catch(e){console.warn('sva: condição composta ignorada',cond,e);}
+        }
+        const snap=await fns.getDocs(q);
+        docs=snap.docs;
 
-      const snap=await fns.getDocs(q);
-      if(snap.empty)continue;
-
-      // Filtrar condições não suportadas nativamente pelo Firestore (contains, empty, notempty)
-      let docs=snap.docs;
-      const softConds=(rule.conditions||[]).filter(c=>c.field&&['contains','empty','notempty'].includes(c.op));
-      if(softConds.length){
-        docs=docs.filter(doc=>{
-          const d=doc.data();
-          return softConds.every(c=>{
-            const v=String(d[c.field]||'');
-            if(c.op==='contains')return v.toLowerCase().includes(String(c.value||'').toLowerCase());
-            if(c.op==='empty')return!v.trim();
-            if(c.op==='notempty')return!!v.trim();
-            return true;
+        // Soft conditions (contains / empty / notempty)
+        const softConds=(rule.conditions||[]).filter(c=>c.field&&['contains','empty','notempty'].includes(c.op));
+        if(softConds.length){
+          docs=docs.filter(doc=>{
+            const d=doc.data();
+            return softConds.every(c=>{
+              const v=String(d[c.field]||'');
+              if(c.op==='contains')return v.toLowerCase().includes(String(c.value||'').toLowerCase());
+              if(c.op==='empty')return!v.trim();
+              if(c.op==='notempty')return!!v.trim();
+              return true;
+            });
           });
-        });
+        }
       }
+
+      // ── Checar ação de BLOQUEIO ──
+      // Se a regra tem updates com valueType='block' E encontrou registros → bloquear
+      const blockUpd=(rule.updates||[]).find(u=>u.valueType==='block');
+      if(blockUpd&&docs.length>0){
+        const blockMsg=blockUpd.value||rule.label||'Operação bloqueada por regra de controle.';
+        // Lança erro especial para sinalizar bloqueio ao chamador (submitForm)
+        const err=new Error(blockMsg);
+        err._isSvaBlock=true;
+        throw err;
+      }
+
       if(!docs.length)continue;
 
-      // ── Confirmação ao usuário (se configurada) ──
+      // ── Confirmação ANTES de persistir ──
       if(rule.confirmMessage&&rule.confirmMessage.trim()){
         const confirmed=await appConfirm(
           `${rule.confirmMessage.trim()}\n\n(${docs.length} registro${docs.length!==1?'s':''} serão afetados)`,
           rule.label||'Ação ao Salvar'
         );
-        if(!confirmed)continue;
+        if(!confirmed)continue; // pula apenas esta regra, não cancela as outras
       }
 
-      // ── Montar objeto de updates ──
+      // ── Montar objeto de updates (campos que não são 'block') ──
       const updates={};
       for(const upd of(rule.updates||[])){
-        if(!upd.field||upd.field==='__custom__')continue;
+        if(!upd.field||upd.field==='__custom__'||upd.valueType==='block')continue;
         updates[upd.field]=_svaResolveValue(upd,formData,nowMs,nowIso,nowDateBr);
       }
-      // Auditoria da ação
       updates._sva_at=nowMs;
       updates._sva_by=S.currentUserData?.name||S.currentUser?.email||'sistema';
       if(!Object.keys(updates).filter(k=>!k.startsWith('_sva_')).length)continue;
 
-      // ── Aplicar updates em batch (máx 490 por batch) ──
+      // ── Aplicar updates em batch ──
       for(let i=0;i<docs.length;i+=490){
         const batch=fns.writeBatch(db);
         docs.slice(i,i+490).forEach(doc=>{
-          // Lead time: calcula a partir do _createdAt do documento alvo
           const data=doc.data();
           const finalUpdates={...updates};
+
+          // Lead time por documento
           for(const upd of(rule.updates||[])){
             if(!upd.field||!upd.valueType.startsWith('lead_time_'))continue;
             const createdAt=data._createdAt||data._ts||null;
-            const targetMs=typeof createdAt==='number'?createdAt
-              :(createdAt?.toMillis?createdAt.toMillis():null);
-            if(targetMs){
-              const diffMs=nowMs-targetMs;
+            const targetMs=typeof createdAt==='number'?createdAt:(createdAt?.toMillis?createdAt.toMillis():null);
+            const baseMs=targetMs||_svaLegacyDateToMs(data._data,data._hora);
+            if(baseMs){
+              const diffMs=nowMs-baseMs;
+              const totalMin=Math.floor(diffMs/60000);
+              const days=Math.floor(totalMin/1440);
+              const remMin=totalMin%1440;
+              const h=Math.floor(remMin/60),m=remMin%60;
+              const fmtDDHHMM=days>0
+                ?`${days}d ${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`
+                :`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
               if(upd.valueType==='lead_time_ms')finalUpdates[upd.field]=diffMs;
               else if(upd.valueType==='lead_time_min')finalUpdates[upd.field]=Math.round(diffMs/60000);
               else if(upd.valueType==='lead_time_hrs')finalUpdates[upd.field]=parseFloat((diffMs/3600000).toFixed(2));
               else if(upd.valueType==='lead_time_days')finalUpdates[upd.field]=parseFloat((diffMs/86400000).toFixed(2));
-              else if(upd.valueType==='lead_time_fmt'){
-                const totalMin=Math.floor(diffMs/60000);
-                const h=Math.floor(totalMin/60),m=totalMin%60;
-                finalUpdates[upd.field]=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-              }
+              else if(upd.valueType==='lead_time_fmt')finalUpdates[upd.field]=fmtDDHHMM;
             }else{
-              // Fallback: sem _createdAt — tenta compor a partir de _data/_hora legados
-              const legacyMs=_svaLegacyDateToMs(data._data,data._hora);
-              if(legacyMs){
-                const diffMs2=nowMs-legacyMs;
-                if(upd.valueType==='lead_time_ms')finalUpdates[upd.field]=diffMs2;
-                else if(upd.valueType==='lead_time_min')finalUpdates[upd.field]=Math.round(diffMs2/60000);
-                else if(upd.valueType==='lead_time_hrs')finalUpdates[upd.field]=parseFloat((diffMs2/3600000).toFixed(2));
-                else if(upd.valueType==='lead_time_days')finalUpdates[upd.field]=parseFloat((diffMs2/86400000).toFixed(2));
-                else if(upd.valueType==='lead_time_fmt'){
-                  const totalMin=Math.floor(diffMs2/60000);
-                  const h=Math.floor(totalMin/60),m=totalMin%60;
-                  finalUpdates[upd.field]=`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`;
-                }
-              }else{
-                finalUpdates[upd.field]='—';
-              }
+              finalUpdates[upd.field]='—';
             }
           }
+
           batch.update(doc.ref,finalUpdates);
-          // Atualizar cache local se o registro estiver em memória
+          // Atualizar cache local
           const tid=String(rule.targetCollection);
           if(S.records[tid]){
-            const idx=S.records[tid].findIndex(r=>r._docId===doc.id);
-            if(idx!==-1)S.records[tid][idx]={...S.records[tid][idx],...finalUpdates};
+            const lidx=S.records[tid].findIndex(r=>r._docId===doc.id);
+            if(lidx!==-1)S.records[tid][lidx]={...S.records[tid][lidx],...finalUpdates};
           }
         });
         await batch.commit();
       }
 
-      console.log(`[SVA] "${rule.label}": ${docs.length} registro(s) atualizados em coleção ${rule.targetCollection}`);
+      console.log(`[SVA] "${rule.label}": ${docs.length} registro(s) atualizados`);
     }catch(e){
+      if(e._isSvaBlock){
+        // Re-lança para que submitForm desfaça a gravação
+        throw e;
+      }
       console.error(`[SVA] Erro na regra "${rule.label||'?'}"`,e);
       showToast(`Ação "${rule.label||'?'}" falhou: ${e.message}`,'danger');
     }
   }
 }
-
-/**
- * Resolve o valor final de um update conforme o tipo configurado.
- * Lead times calculados por documento são resolvidos dentro do batch (acima).
- */
 function _svaResolveValue(upd,formData,nowMs,nowIso,nowDateBr){
   switch(upd.valueType){
     case'fixed':return upd.value||'';
@@ -4326,23 +4304,10 @@ function _svaResolveValue(upd,formData,nowMs,nowIso,nowDateBr){
     case'now_iso':return nowIso;
     case'now_date':return nowDateBr;
     case'now_ts':return nowMs;
-    // lead_time_* são calculados por-documento no batch acima — placeholder
+    case'block':return null; // bloquear — tratado no executor, não como campo de update
+    // lead_time_* são calculados por-documento no batch — placeholder aqui
     default:return'';
   }
-}
-
-/**
- * Formata um intervalo em ms para o formato "Dd | HH:MM"
- * Ex: 90061000ms → "1d | 01:01"  (1 dia, 1 hora e 1 minuto)
- * Ex: 3600000ms  → "0d | 01:00"  (1 hora)
- */
-function _formatSla(ms){
-  if(!ms||ms<0)return'—';
-  const totalMin=Math.floor(ms/60000);
-  const days=Math.floor(totalMin/1440);
-  const hours=Math.floor((totalMin%1440)/60);
-  const mins=totalMin%60;
-  return`${days}d | ${String(hours).padStart(2,'0')}:${String(mins).padStart(2,'0')}`;
 }
 
 /**
@@ -4494,191 +4459,6 @@ async function saveScreenPerms(){
 }
 document.querySelectorAll('.modal-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)o.classList.remove('open');}));
 document.addEventListener('DOMContentLoaded',updateScreenTypeHint);
-
-// ═══ HIGHLIGHT — gerenciamento de regras de destaque visual ═══
-// Estado temporário das regras enquanto o modal de campo está aberto
-if(!window.S)window.S={};
-S.tempHighlightRules=S.tempHighlightRules||[];
-
-const HL_OPS=[
-  {v:'==',l:'igual a'},{v:'!=',l:'diferente de'},
-  {v:'>',l:'maior que'},{v:'<',l:'menor que'},
-  {v:'>=',l:'maior ou igual a'},{v:'<=',l:'menor ou igual a'},
-  {v:'contains',l:'contém'},{v:'empty',l:'está vazio'},{v:'notempty',l:'não vazio'},
-];
-const HL_COLORS=[
-  {v:'',l:'— Sem cor de fundo'},
-  {v:'#fde8e8',l:'🔴 Vermelho claro'},
-  {v:'#fff3cd',l:'🟡 Amarelo claro'},
-  {v:'#d4edda',l:'🟢 Verde claro'},
-  {v:'#d1ecf1',l:'🔵 Azul claro'},
-  {v:'#e2d9f3',l:'🟣 Roxo claro'},
-  {v:'#f8d7da',l:'🔴 Vermelho forte'},
-  {v:'#fff8c5',l:'🟡 Amarelo forte'},
-  {v:'#c3e6cb',l:'🟢 Verde forte'},
-  {v:'custom',l:'✏ Cor personalizada…'},
-];
-const HL_TEXT_COLORS=[
-  {v:'',l:'— Cor padrão'},
-  {v:'#a32d2d',l:'🔴 Vermelho'},
-  {v:'#856404',l:'🟡 Amarelo escuro'},
-  {v:'#155724',l:'🟢 Verde escuro'},
-  {v:'#0c5460',l:'🔵 Azul escuro'},
-  {v:'#4a3a8a',l:'🟣 Roxo'},
-  {v:'custom',l:'✏ Cor personalizada…'},
-];
-
-function addHighlightRule(){
-  if(!S.tempHighlightRules)S.tempHighlightRules=[];
-  S.tempHighlightRules.push({op:'==',value:'',bgColor:'#fde8e8',textColor:'#a32d2d',bold:false});
-  renderHighlightRules();
-}
-function removeHighlightRule(i){
-  S.tempHighlightRules.splice(i,1);
-  renderHighlightRules();
-}
-function updateHL(i,key,val){
-  S.tempHighlightRules[i][key]=val;
-  // Re-renderiza apenas se for seletor de cor (para mostrar/ocultar input custom)
-  if(key==='bgColor'||key==='textColor')renderHighlightRules();
-}
-
-function renderHighlightRules(){
-  const el=g('highlightRulesList');if(!el)return;
-  const rules=S.tempHighlightRules||[];
-  if(!rules.length){el.innerHTML=`<div style="font-size:12px;color:var(--text3);padding:4px 0">Nenhuma regra.</div>`;return;}
-  const opOpts=HL_OPS.map(o=>`<option value="${o.v}">${o.l}</option>`).join('');
-  const bgOpts=HL_COLORS.map(c=>`<option value="${c.v}">${c.l}</option>`).join('');
-  const txOpts=HL_TEXT_COLORS.map(c=>`<option value="${c.v}">${c.l}</option>`).join('');
-  el.innerHTML=rules.map((r,i)=>`
-    <div style="background:var(--bg2);border:.5px solid var(--border);border-radius:8px;padding:8px 10px">
-      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:6px">
-        <span style="font-size:11px;font-weight:600;color:var(--text3);min-width:32px">SE</span>
-        <select style="flex:1;min-width:90px;font-size:12px;padding:3px 6px;height:28px" onchange="updateHL(${i},'op',this.value)">
-          ${opOpts.replace(`value="${r.op}"`,`value="${r.op}" selected`)}
-        </select>
-        ${!['empty','notempty'].includes(r.op)?`<input type="text" value="${esc(r.value||'')}" placeholder="valor…" style="flex:1;min-width:80px;font-size:12px;padding:3px 6px;height:28px" onchange="updateHL(${i},'value',this.value)"/>`:''}
-        <button class="btn btn-sm btn-danger" style="padding:2px 8px" onclick="removeHighlightRule(${i})"><i class="fa-solid fa-xmark"></i></button>
-      </div>
-      <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap">
-        <span style="font-size:11px;color:var(--text3);min-width:32px">COR</span>
-        <select style="flex:1;min-width:130px;font-size:12px;padding:3px 6px;height:28px" onchange="updateHL(${i},'bgColor',this.value)">
-          ${bgOpts.replace(`value="${r.bgColor||''}"`,`value="${r.bgColor||''}" selected`)}
-        </select>
-        ${r.bgColor==='custom'?`<input type="color" value="${r.bgColorCustom||'#ffffff'}" style="width:32px;height:28px;padding:1px;border-radius:5px;cursor:pointer" onchange="S.tempHighlightRules[${i}].bgColorCustom=this.value"/>`:''}
-        <select style="flex:1;min-width:120px;font-size:12px;padding:3px 6px;height:28px" onchange="updateHL(${i},'textColor',this.value)">
-          ${txOpts.replace(`value="${r.textColor||''}"`,`value="${r.textColor||''}" selected`)}
-        </select>
-        ${r.textColor==='custom'?`<input type="color" value="${r.textColorCustom||'#000000'}" style="width:32px;height:28px;padding:1px;border-radius:5px;cursor:pointer" onchange="S.tempHighlightRules[${i}].textColorCustom=this.value"/>`:''}
-        <label style="display:flex;align-items:center;gap:4px;font-size:12px;cursor:pointer;white-space:nowrap">
-          <input type="checkbox" ${r.bold?'checked':''} style="width:auto" onchange="S.tempHighlightRules[${i}].bold=this.checked"/>
-          <strong>Negrito</strong>
-        </label>
-      </div>
-      <div style="margin-top:6px;padding:4px 8px;border-radius:6px;font-size:12px;${_hlPreviewStyle(r)}">
-        Prévia: ${r.op==='empty'?'(célula vazia)':r.op==='notempty'?'(qualquer valor)':(r.value||'…')}
-      </div>
-    </div>`).join('');
-}
-
-// Retorna o style inline de preview de uma regra de highlight
-function _hlPreviewStyle(r){
-  const bg=r.bgColor==='custom'?(r.bgColorCustom||''):(r.bgColor||'');
-  const tx=r.textColor==='custom'?(r.textColorCustom||''):(r.textColor||'');
-  return`${bg?`background:${bg};`:'background:var(--bg3);'}${tx?`color:${tx};`:''}${r.bold?'font-weight:bold;':''}`;
-}
-
-/**
- * Aplica estilos de highlight em uma célula <td> baseado nas regras do campo.
- * @param {HTMLElement} td  — elemento <td>
- * @param {string}      val — valor da célula
- * @param {Array}       rules — field.highlightRules
- */
-function applyHighlightToCell(td,val,rules){
-  if(!rules||!rules.length)return;
-  const sVal=String(val||'').trim();
-  const numVal=parseRawNum(sVal);
-  const numOk=sVal!==''&&!isNaN(numVal)&&numVal!==0;
-  for(const r of rules){
-    let match=false;
-    const rVal=String(r.value||'').trim();
-    const rNum=parseRawNum(rVal);
-    if(r.op==='=='){
-      // Tenta igualdade textual (case-insensitive) OU numérica
-      match=sVal.toLowerCase()===rVal.toLowerCase()||(rVal!==''&&numOk&&numVal===rNum);
-    }
-    else if(r.op==='!=')match=sVal.toLowerCase()!==rVal.toLowerCase();
-    else if(r.op==='>')match=numOk&&numVal>rNum;
-    else if(r.op==='<')match=numOk&&numVal<rNum;
-    else if(r.op==='>=')match=numOk&&numVal>=rNum;
-    else if(r.op==='<=')match=numOk&&numVal<=rNum;
-    else if(r.op==='contains')match=sVal.toLowerCase().includes(rVal.toLowerCase());
-    else if(r.op==='empty')match=!sVal;
-    else if(r.op==='notempty')match=!!sVal;
-    if(match){
-      const bg=r.bgColor==='custom'?(r.bgColorCustom||''):(r.bgColor||'');
-      const tx=r.textColor==='custom'?(r.textColorCustom||''):(r.textColor||'');
-      if(bg)td.style.background=bg;
-      if(tx)td.style.color=tx;
-      if(r.bold)td.style.fontWeight='bold';
-      break;
-    }
-  }
-}
-
-// ─── Highlight aplicado diretamente dentro de renderTableView via setTimeout ───
-
-function _applyAllHighlights(){
-  const tableId=S.currentTableView;
-  const screen=S.screens.find(s=>s.id===tableId);
-  if(!screen)return;
-  // Coleta todos os campos com regras de highlight desta tela
-  const hlFields=(screen.fields||[]).filter(f=>f.highlightRules&&f.highlightRules.length);
-  if(!hlFields.length)return;
-  // Mapa nome-do-campo → regras para lookup rápido
-  const hlMap={};
-  hlFields.forEach(f=>{hlMap[f.name]=f.highlightRules;});
-  // Percorre cada tabela renderizada no DOM
-  document.querySelectorAll('#tableViewContent table').forEach(table=>{
-    const headers=[...table.querySelectorAll('thead th')].map(th=>th.textContent.replace(/[\u2191\u2193]/g,'').trim());
-    table.querySelectorAll('tbody tr').forEach(tr=>{
-      // Pula linha de totais
-      if(tr.classList.contains('sum-total-row'))return;
-      const cells=[...tr.querySelectorAll('td')];
-      headers.forEach((colName,ci)=>{
-        const rules=hlMap[colName];
-        if(!rules||!rules.length)return;
-        const td=cells[ci];
-        if(!td)return;
-        // Limpa estilo anterior para refletir valor atualizado
-        td.style.background='';td.style.color='';td.style.fontWeight='';
-        const rawText=td.textContent.replace('—','').trim();
-        applyHighlightToCell(td,rawText,rules);
-      });
-    });
-  });
-}
-
-// ═══ CORREÇÃO DE DATA — formata input[type=date] para dd/mm/aaaa ao salvar ═══
-// O input type="date" retorna sempre no formato ISO (aaaa-mm-dd).
-// A função formatDateFieldValue converte para dd/mm/aaaa ao gravar no record.
-function formatDateFieldValue(isoVal){
-  if(!isoVal)return isoVal;
-  // Se já está no formato dd/mm/aaaa, retorna como está
-  if(/^\d{2}\/\d{2}\/\d{4}$/.test(isoVal))return isoVal;
-  // Converte de aaaa-mm-dd para dd/mm/aaaa
-  const m=isoVal.match(/^(\d{4})-(\d{2})-(\d{2})/);
-  if(m)return`${m[3]}/${m[2]}/${m[1]}`;
-  return isoVal;
-}
-// Converte dd/mm/aaaa → aaaa-mm-dd para popular input[type=date] ao editar
-function dateToInputValue(brVal){
-  if(!brVal)return'';
-  if(/^\d{4}-\d{2}-\d{2}$/.test(brVal))return brVal;
-  const m=brVal.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
-  if(m)return`${m[3]}-${m[2]}-${m[1]}`;
-  return brVal;
-}
 </script>
 </body>
 </html>
